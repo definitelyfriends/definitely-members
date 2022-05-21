@@ -107,8 +107,8 @@ contract DefinitelyMemberships is ERC721, Owned {
     error TransferMembershipProposalEnded();
 
     error RevokeMembershipProposalNotFound();
-    error RevokeMembershipProposalEnded();
     error RevokeMembershipProposalInProgress();
+    error RevokeMembershipProposalEnded();
 
     error AlreadyVoted();
     error NotProposalInitiator();
@@ -412,6 +412,8 @@ contract DefinitelyMemberships is ERC721, Owned {
         memberLastSentInvite[inviter] = block.timestamp;
     }
 
+    /// @dev Mints a new membership token and starts an invite cooldown so new members
+    ///      can't immediately invite more members
     function _mintMembership(address to) internal {
         _mint(to, nextMembershipId);
         ++nextMembershipId;
