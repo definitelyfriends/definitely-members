@@ -309,7 +309,7 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     ------------------------------------------------------------------------ */
 
     /// @dev Prevents transfers of membership tokens. If a transfer is required, use the
-    ///      approved membership transfer contract to create a proposal to call `sociallyRecover`.
+    ///      approved membership transfer contract to create a proposal and `transferMembership`.
     function transferFrom(
         address from,
         address to,
