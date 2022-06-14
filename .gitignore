@@ -1,9 +1,4 @@
 node_modules
-.env
-coverage
-coverage.json
-typechain
+*debug.log
 
-#Hardhat files
-cache
-artifacts
+.vercel

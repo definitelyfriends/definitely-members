@@ -1,0 +1,20 @@
+type MemberToken @entity {
+  id: ID!
+  tokenURI: String
+  owner: Wallet!
+  invitedBy: Wallet
+}
+
+type Wallet @entity {
+  id: ID!
+  address: Bytes!
+  membership: MemberToken! @derivedFrom(field: "owner")
+}
+
+type Transfer @entity {
+  id: ID!
+  from: Wallet!
+  to: Wallet!
+  txHash: Bytes!
+  timestamp: BigInt!
+}

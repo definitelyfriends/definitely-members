@@ -1,17 +1,48 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.14;
 
+/**
+                                                      ...:--==***#@%%-
+                                             ..:  -*@@@@@@@@@@@@@#*:  
+                               -:::-=+*#%@@@@@@*-=@@@@@@@@@@@#+=:     
+           .::---:.         +#@@@@@@@@@@@@@%*+-. -@@@@@@+..           
+    .-+*%@@@@@@@@@@@#-     -@@@@@@@@@@%#*=:.    :@@@@@@@#%@@@@@%:     
+ =#@@@@@@@@@@@@@@@@@@@%.   %@@@@@@-..           *@@@@@@@@@@@@%*.      
+-@@@@@@@@@#*+=--=#@@@@@%  +@@@@@@%*#%@@@%*=-.. .@@@@@@@%%*+=:         
+ :*@@@@@@*       .@@@@@@.*@@@@@@@@@@@@*+-      =%@@@@%                
+  =@@@@@@.       *@@@@@%:@@@@@@*==-:.          =@@@@@:                
+ .@@@@@@=      =@@@@@@%.*@@@@@=   ..::--=+*=+*+=@@@@=                 
+ #@@@@@*    .+@@@@@@@* .+@@@@@#%%@@@@@@@@#+:.  =#@@=                  
+ @@@@@%   :*@@@@@@@*:  .#@@@@@@@@@@@@@%#:       ---                   
+:@@@@%. -%@@@@@@@+.     +@@@@@%#*+=:.                                 
++@@@%=*@@@@@@@*:        =*:                                           
+:*#+%@@@@%*=.                                                         
+ :+##*=:.
+
+*/
+
 import "@rari-capital/solmate/src/auth/Owned.sol";
 import "@rari-capital/solmate/src/tokens/ERC721.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-contract DefinitelyMemberships is ERC721, Owned {
-    using Strings for uint256;
-    using MerkleProof for bytes32[];
+import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
+import {IDefinitelyMetadata} from "./interfaces/IDefinitelyMetadata.sol";
 
+/// @title Definitely Memberships
+/// @author DEF DAO
+/// @notice A membership token for DEF DAO in the form of an ERC721.
+///
+///         Features:
+///           - Approved contracts for issuing memberships. This allows different issuing
+///             mechanisms e.g. invites, props, funding etc.
+///           - "Soulbound" tokens with social recovery in the form of transfer proposals.
+///             Other members can approve proposals to transfer a certain token to a new address.
+///           - Revoking proposals to remove members if it's ever needed.
+///           - Separate upgradable metadata contract.
+///           - Per token metadata overriding
+///
+contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     /* ------------------------------------------------------------------------
-                                   S T O R A G E    
+       S T O R A G E
     ------------------------------------------------------------------------ */
 
     /* ERC-721 ------------------------------------------------------------- */
@@ -19,27 +50,15 @@ contract DefinitelyMemberships is ERC721, Owned {
     /// @dev Tracks ERC-721 token ids
     uint256 public nextMembershipId = 1;
 
-    /// @dev Usual tokenURI metadata stuff
-    string public baseURI;
+    /* ISSUING MEMBERSHIPS ------------------------------------------------- */
 
-    /* INVITES ------------------------------------------------------------- */
+    /// @dev Contracts that are allowed to issue memberships
+    mapping(address => bool) public allowedIssuingContracts;
 
-    /// @dev Uses a merkle proof for existing members prior to this contract
-    bytes32 public existingMembersClaimRoot;
+    /// @dev Prevents an address from becoming an owner of this token
+    mapping(address => bool) private _denyList;
 
-    /// @dev Allows a member to set an address that can be claimed later
-    mapping(address => bool) public inviteAvailable;
-
-    /// @dev Used to prevent spam invites
-    uint256 public inviteCooldown;
-
-    /// @dev Used as a cooldown check to make sure a malicious member can't spam invite
-    mapping(address => uint256) public memberLastSentInvite;
-
-    /// @dev Prevents an address from being invited
-    mapping(address => bool) public denyList;
-
-    /* SOULBOUND ----------------------------------------------------------- */
+    /* TRANSFERS ----------------------------------------------------------- */
 
     /// @dev Allows someone propose a transfer to a different wallet
     struct TransferMembershipProposal {
@@ -76,31 +95,55 @@ contract DefinitelyMemberships is ERC721, Owned {
 
     VotingConfig public votingConfig;
 
-    /* ------------------------------------------------------------------------
-                                    E V E N T S    
-    ------------------------------------------------------------------------ */
+    /* METADATA ------------------------------------------------------------ */
 
-    event TransferMembershipProposalCreated(uint256 tokenId, address owner, address to);
-    event TransferMembershipProposalCancelled(uint256 tokenId, address owner, address to);
-    event TransferMembershipProposalApproved(uint256 tokenId, address owner, address to);
-    event TransferMembershipProposalDenied(uint256 tokenId, address owner, address to);
+    /// @dev A fallback metadata address for all tokens that don't specify an override
+    IDefinitelyMetadata public defaultMetadata;
 
-    event RevokeMembershipProposalCreated(uint256 tokenId, address owner, bool addToDenyList);
-    event RevokeMembershipProposalCancelled(uint256 tokenId, address owner);
-    event RevokeMembershipProposalApproved(uint256 tokenId, address owner);
-    event RevokeMembershipProposalDenied(uint256 tokenId, address owner);
+    /// @dev Allows a specific token ID to use it's own metadata address
+    mapping(uint256 => IDefinitelyMetadata) public tokenMetadataOverrideAddress;
 
     /* ------------------------------------------------------------------------
-                                    E R R O R S    
+       E V E N T S
     ------------------------------------------------------------------------ */
 
+    /* ISSUING MEMBERSHIPS ------------------------------------------------- */
+
+    event IssuingContractAdded(address indexed contractAddress);
+    event IssuingContractRevoked(address indexed contractAddress);
+
+    /* TRANSFERS ----------------------------------------------------------- */
+
+    event TransferMembershipProposalCreated(uint256 indexed tokenId, address owner, address to);
+    event TransferMembershipProposalCancelled(uint256 indexed tokenId, address owner, address to);
+    event TransferMembershipProposalApproved(uint256 indexed tokenId, address owner, address to);
+    event TransferMembershipProposalDenied(uint256 indexed tokenId, address owner, address to);
+
+    /* REVOKING ------------------------------------------------------------ */
+
+    event RevokeMembershipProposalCreated(
+        uint256 indexed tokenId,
+        address owner,
+        bool addToDenyList
+    );
+    event RevokeMembershipProposalCancelled(uint256 indexed tokenId, address owner);
+    event RevokeMembershipProposalApproved(uint256 indexed tokenId, address owner);
+    event RevokeMembershipProposalDenied(uint256 indexed tokenId, address owner);
+
+    /* METADATA ------------------------------------------------------------ */
+
+    event DefaultMetadataUpdated(address indexed metadata);
+    event MetadataOverridden(uint256 indexed tokenId, address metadata);
+    event MetadataResetToDefault(uint256 indexed tokenId);
+
+    /* ------------------------------------------------------------------------
+       E R R O R S
+    ------------------------------------------------------------------------ */
+
+    error NotAuthorizedToIssueMembership();
     error NotDefMember();
     error AlreadyDefMember();
-
-    error InviteOnCooldown();
-    error NoInviteToClaim();
-    error NotYourMembershipToken();
-    error InvitedMemberOnDenyList();
+    error OnDenyList();
 
     error TransferNotAllowed();
     error TransferMembershipProposalNotFound();
@@ -113,8 +156,10 @@ contract DefinitelyMemberships is ERC721, Owned {
     error AlreadyVoted();
     error NotProposalInitiator();
 
+    error NotOwnerOfToken();
+
     /* ------------------------------------------------------------------------
-                                 M O D I F I E R S    
+       M O D I F I E R S
     ------------------------------------------------------------------------ */
 
     /// @dev Reverts if not a member
@@ -123,42 +168,37 @@ contract DefinitelyMemberships is ERC721, Owned {
         _;
     }
 
-    /// @dev Reverts if the person being invited is already a member
+    /// @dev Reverts if not an allowed minting contract
+    modifier onlyIssuingContract() {
+        if (!allowedIssuingContracts[msg.sender]) revert NotAuthorizedToIssueMembership();
+        _;
+    }
+
+    /// @dev Reverts if `to` is already a member
     modifier whenNotDefMember(address to) {
         if (_balanceOf[to] > 0) revert AlreadyDefMember();
         _;
     }
 
-    /// @dev Reverts if an invite is currently on cooldown
-    modifier whenInviteNotOnCooldown() {
-        if (memberLastSentInvite[msg.sender] + inviteCooldown < block.timestamp)
-            revert InviteOnCooldown();
-        _;
-    }
-
     /// @dev Reverts if `to` is on the deny list
     modifier whenNotOnDenyList(address to) {
-        if (denyList[to]) revert InvitedMemberOnDenyList();
+        if (_denyList[to]) revert OnDenyList();
         _;
     }
 
     /* ------------------------------------------------------------------------
-                                      I N I T
+       I N I T
     ------------------------------------------------------------------------ */
 
     constructor(
         address owner_,
-        string memory baseURI_,
-        bytes32 existingMembersClaimRoot_,
-        uint256 inviteCooldown_,
+        IDefinitelyMetadata defaultMetadata_,
         uint64 minTransferMembershipQuorum_,
         uint64 maxTransferMembershipVotes_,
         uint64 minRevokeMembershipQuorum_,
         uint64 maxRevokeMembershipVotes_
     ) ERC721("DEF", "Definitely Membership") Owned(owner_) {
-        baseURI = baseURI_;
-        existingMembersClaimRoot = existingMembersClaimRoot_;
-        inviteCooldown = inviteCooldown_;
+        defaultMetadata = defaultMetadata_;
 
         votingConfig = VotingConfig({
             minTransferMembershipQuorum: minTransferMembershipQuorum_,
@@ -169,64 +209,51 @@ contract DefinitelyMemberships is ERC721, Owned {
     }
 
     /* ------------------------------------------------------------------------
-                           S E N D I N G   I N V I T E S    
+       A D M I N
     ------------------------------------------------------------------------ */
 
-    /// @notice Send an invite to an address that can be claimed at a later time
-    function sendClaimableInvite(address to)
-        external
-        onlyDefMember
-        whenInviteNotOnCooldown
-        whenNotDefMember(to)
-        whenNotOnDenyList(to)
-    {
-        inviteAvailable[to] = true;
-        _startInviteCooldown(msg.sender);
+    /// @notice Adds a new membership issuing contract
+    /// @dev The new contract will be able to mint membership tokens to people who aren't already
+    ///      members, and who aren't on the deny list. There are no other restrictions so the
+    ///      issuing contract must implement additional checks if necessary
+    function addIssuingContract(address issuingContract) external onlyOwner {
+        allowedIssuingContracts[issuingContract] = true;
+        emit IssuingContractAdded(issuingContract);
     }
 
-    /// @notice Send an invite token directly to an address
-    function sendImediateInvite(address to)
-        external
-        onlyDefMember
-        whenInviteNotOnCooldown
-        whenNotDefMember(to)
-        whenNotOnDenyList(to)
-    {
-        _mintMembership(to);
-        _startInviteCooldown(msg.sender);
+    /// @notice Revokes an existing membership issuing contract
+    /// @dev This will prevent the contract from calling `issueMembership`
+    function revokeIssuingContract(address issuingContract) external onlyOwner {
+        allowedIssuingContracts[issuingContract] = false;
+        emit IssuingContractRevoked(issuingContract);
+    }
+
+    /// @notice Updates the fallback metadata used for all tokens that haven't set an override
+    function setDefaultMetadata(IDefinitelyMetadata defaultMetadata_) external onlyOwner {
+        defaultMetadata = defaultMetadata_;
+        emit DefaultMetadataUpdated(address(defaultMetadata_));
     }
 
     /* ------------------------------------------------------------------------
-                          C L A I M I N G   I N V I T E S
+       M E M B E R S H I P   M I N T I N G
     ------------------------------------------------------------------------ */
 
-    /// @notice Allows someone to claim their invite if they have one available
-    /// @dev Reverts if they're already a member, or there's no invite to claim
-    function claimInvite() external whenNotDefMember(msg.sender) whenNotOnDenyList(msg.sender) {
-        if (inviteAvailable[msg.sender]) revert NoInviteToClaim();
-        _mintMembership(msg.sender);
-
-        // We don't really need to remove the available invite, but it's nice to clean up
-        inviteAvailable[msg.sender] = false;
-    }
-
-    /// @notice Allows existing members (prior to this contract deploy) to claim their NFT
-    /// @dev Requires the existing list of members to be set in a merkle root upon deploy
-    /// @param proof A merkle proof containing eligible addresses
-    function claimPriorMembership(bytes32[] memory proof)
+    /// @notice Allows another contract to issue a membership token to someone
+    /// @dev Reverts if this wasn't called from an approved issuing contract, if `to` is already
+    ///      a member or they're on the deny list.
+    function issueMembership(address to)
         external
-        whenNotDefMember(msg.sender)
-        whenNotOnDenyList(msg.sender)
+        override
+        onlyIssuingContract
+        whenNotDefMember(to)
+        whenNotOnDenyList(to)
     {
-        // Check the address and proof
-        if (!proof.verify(existingMembersClaimRoot, keccak256(abi.encodePacked(msg.sender)))) {
-            revert NoInviteToClaim();
-        }
-        _mintMembership(msg.sender);
+        _mint(to, nextMembershipId);
+        ++nextMembershipId;
     }
 
     /* ------------------------------------------------------------------------
-                                 S O U L B O U N D
+       S O U L B O U N D
     ------------------------------------------------------------------------ */
 
     /// @dev Prevents transfers unless there's a certain amount of approvals from other DEF members.
@@ -264,6 +291,8 @@ contract DefinitelyMemberships is ERC721, Owned {
     /// @notice If a member's wallet is compromised, they can propose a transfer
     ///         of their membership NFT to a new wallet. Once a proposal is approved,
     ///         the new wallet can call `transferFrom` to move their NFT.
+    /// @dev There can only be one transfer proposal for a new address at any given time. If a new
+    ///      proposal is submitted, any existing proposal will be overwritten.
     function newTransferMembershipProposal(uint256 tokenId) external whenNotDefMember(msg.sender) {
         address currentOwner = _ownerOf[tokenId];
         TransferMembershipProposal storage proposal = transferMembershipProposals[msg.sender];
@@ -282,7 +311,8 @@ contract DefinitelyMemberships is ERC721, Owned {
 
     /// @notice Allows a DEF member to vote for or against a membership transfer proposal
     /// @dev The last voting member will automatically set `getApproved` to the new address so the
-    //       new address can transfer ownership, but only if the proposal reaches quorum
+    ///      new address can transfer ownership, but only if the proposal reaches quorum.
+    /// TODO: Should the last vote just automatically update the owner and emit a transfer event?
     function voteOnTransferMembershipProposal(address newOwner, bool inFavor)
         external
         onlyDefMember
@@ -317,7 +347,7 @@ contract DefinitelyMemberships is ERC721, Owned {
             emit TransferMembershipProposalDenied(proposal.tokenId, owner, newOwner);
         }
 
-        // If quorum has been reached, approve the proposal
+        // If quorum has been reached, approve the proposal, and the new owner to transfer
         if (proposal.approvalCount == config.minTransferMembershipQuorum) {
             emit TransferMembershipProposalApproved(proposal.tokenId, owner, newOwner);
             getApproved[proposal.tokenId] = newOwner;
@@ -326,7 +356,7 @@ contract DefinitelyMemberships is ERC721, Owned {
     }
 
     /* ------------------------------------------------------------------------
-                    R E V O K I N G   M E M B E R S H I P S    
+       R E V O K I N G   M E M B E R S H I P S
     ------------------------------------------------------------------------ */
 
     /// @notice Allows a member to propose revoking the membership of another member
@@ -397,42 +427,63 @@ contract DefinitelyMemberships is ERC721, Owned {
         if (proposal.approvalCount == config.minRevokeMembershipQuorum) {
             emit RevokeMembershipProposalApproved(tokenId, owner);
             if (proposal.addToDenyList) {
-                denyList[_ownerOf[tokenId]] = true;
+                _denyList[_ownerOf[tokenId]] = true;
             }
             _burn(tokenId);
         }
     }
 
     /* ------------------------------------------------------------------------
-                         H E L P E R S   &   U T I L S    
+       M E T A D A T A
     ------------------------------------------------------------------------ */
 
-    /// @dev Starts the invite cooldown for an address
-    function _startInviteCooldown(address inviter) internal {
-        memberLastSentInvite[inviter] = block.timestamp;
+    /// @notice Allows a token holder to set a new metadata address for tokenURI customization
+    /// @param tokenId The token to override metadata for
+    /// @param metadata The new metadata contract address for this token
+    function overrideMetadataForToken(uint256 tokenId, IDefinitelyMetadata metadata) external {
+        if (ownerOf(tokenId) != msg.sender) revert NotOwnerOfToken();
+        tokenMetadataOverrideAddress[tokenId] = metadata;
     }
 
-    /// @dev Mints a new membership token and starts an invite cooldown so new members
-    ///      can't immediately invite more members
-    function _mintMembership(address to) internal {
-        _mint(to, nextMembershipId);
-        ++nextMembershipId;
-        _startInviteCooldown(to);
+    /// @notice Allows a token holder to use the default metadata address for their token
+    /// @param tokenId The token that should use the default metadata contract
+    function resetMetadataForToken(uint256 tokenId) external {
+        delete tokenMetadataOverrideAddress[tokenId];
     }
 
     /* ------------------------------------------------------------------------
-                                   E R C - 7 2 1    
+       P U B L I C   G E T T E R S
+    ------------------------------------------------------------------------ */
+
+    /// @notice Checks if an account is part of DEF with a simple balance check
+    function isDefMember(address account) external view returns (bool) {
+        return _balanceOf[account] > 0;
+    }
+
+    /// @notice Checks if an account is on the DEF deny list. If they are, they will not be
+    ///         allowed to become a member in the future.
+    function isOnDenyList(address account) external view returns (bool) {
+        return _denyList[account];
+    }
+
+    /* ------------------------------------------------------------------------
+       E R C - 7 2 1
     ------------------------------------------------------------------------ */
 
     /// @notice Burn your membership token. Note, you will need to be invited again
     ///         if you want to re-join DEF later.
     function burn(uint256 tokenId) external {
-        if (_ownerOf[tokenId] != msg.sender) revert NotYourMembershipToken();
+        if (_ownerOf[tokenId] != msg.sender) revert NotOwnerOfToken();
         _burn(tokenId);
     }
 
+    /// @dev If the token has a metadata override address, render from that, else use the default
+    ///      metadata address as a fallback.
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        return
-            bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
+        if (tokenMetadataOverrideAddress[tokenId] != IDefinitelyMetadata(address(0))) {
+            return tokenMetadataOverrideAddress[tokenId].tokenURI(tokenId);
+        } else {
+            return defaultMetadata.tokenURI(tokenId);
+        }
     }
 }

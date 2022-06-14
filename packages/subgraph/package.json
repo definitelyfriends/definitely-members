@@ -1,0 +1,15 @@
+{
+  "name": "@def-members/subgraph",
+  "private": true,
+  "scripts": {
+    "codegen": "graph codegen subgraph-*.yaml",
+    "build": "graph build subgraph-*.yaml",
+    "deploy:goerli": "graph deploy --studio definitely-members subgraph-goerli.yaml",
+    "deploy:mainnet": "graph deploy --studio definitely-members subgraph-mainnet.yaml",
+    "deploy:hosted": "graph deploy --product hosted-service def/definitely-members subgraph-mainnet.yaml"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.25.1",
+    "@graphprotocol/graph-ts": "0.24.1"
+  }
+}
