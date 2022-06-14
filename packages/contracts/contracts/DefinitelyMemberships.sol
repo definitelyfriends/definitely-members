@@ -32,12 +32,12 @@ import {IDefinitelyMetadata} from "./interfaces/IDefinitelyMetadata.sol";
 /// @notice A membership token for DEF DAO in the form of an ERC721.
 ///
 ///         Features:
+///           - Soulbound tokens. This can be bypassed by a membership transfer contract to
+///             allow for social recovery if necessary.
 ///           - Approved contracts for issuing memberships. This allows different issuing
-///             mechanisms e.g. invites, props, funding etc.
-///           - "Soulbound" tokens with social recovery in the form of transfer proposals.
-///             Other members can approve proposals to transfer a certain token to a new address.
-///           - Revoking proposals to remove members if it's ever needed.
-///           - Separate upgradable metadata contract.
+///             mechanisms e.g. invites, props, funding etc. at the same time.
+///           - A separate contract for revoking memberships and logic.
+///           - A separate upgradable metadata contract.
 ///           - Per token metadata overriding
 ///
 contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
@@ -53,47 +53,20 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     /* ISSUING MEMBERSHIPS ------------------------------------------------- */
 
     /// @dev Contracts that are allowed to issue memberships
-    mapping(address => bool) public allowedIssuingContracts;
+    mapping(address => bool) public allowedMembershipIssuingContracts;
+
+    /* REVOKING MEMBERSHIPS ------------------------------------------------ */
+
+    /// @dev Contract that's allowed to revoke memberships
+    address public allowedMembershipRevokingContract;
 
     /// @dev Prevents an address from becoming an owner of this token
     mapping(address => bool) private _denyList;
 
-    /* TRANSFERS ----------------------------------------------------------- */
+    /* TRANSFERRING MEMBERSHIPS -------------------------------------------- */
 
-    /// @dev Allows someone propose a transfer to a different wallet
-    struct TransferMembershipProposal {
-        uint256 tokenId;
-        uint8 approvalCount;
-        address[] voters;
-    }
-
-    /// @dev Keeps track of transfer proposals by new wallet address
-    mapping(address => TransferMembershipProposal) public transferMembershipProposals;
-
-    /* REVOKING ------------------------------------------------------------ */
-
-    /// @dev Allows a member to propose another membership be revoked
-    struct RevokeMembershipProposal {
-        address initiator;
-        uint8 approvalCount;
-        bool addToDenyList;
-        address[] voters;
-    }
-
-    /// @dev Keeps track of revoke proposals by tokenId
-    mapping(uint256 => RevokeMembershipProposal) public revokeMembershipProposals;
-
-    /* VOTING -------------------------------------------------------------- */
-
-    /// @dev Voting configuration for reaching quorum on proposals
-    struct VotingConfig {
-        uint64 minTransferMembershipQuorum;
-        uint64 maxTransferMembershipVotes;
-        uint64 minRevokeMembershipQuorum;
-        uint64 maxRevokeMembershipVotes;
-    }
-
-    VotingConfig public votingConfig;
+    /// @dev Contract that's allowed to transfer memberships in cases of access loss
+    address public allowedMembershipTransferContract;
 
     /* METADATA ------------------------------------------------------------ */
 
@@ -109,26 +82,20 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
 
     /* ISSUING MEMBERSHIPS ------------------------------------------------- */
 
-    event IssuingContractAdded(address indexed contractAddress);
-    event IssuingContractRevoked(address indexed contractAddress);
+    event MembershipIssuingContractAdded(address indexed contractAddress);
+    event MembershipIssuingContractRemoved(address indexed contractAddress);
+    event MembershipIssued(uint256 indexed tokenId, address newOwner);
 
-    /* TRANSFERS ----------------------------------------------------------- */
+    /* REVOKING MEMBERSHIPS ------------------------------------------------ */
 
-    event TransferMembershipProposalCreated(uint256 indexed tokenId, address owner, address to);
-    event TransferMembershipProposalCancelled(uint256 indexed tokenId, address owner, address to);
-    event TransferMembershipProposalApproved(uint256 indexed tokenId, address owner, address to);
-    event TransferMembershipProposalDenied(uint256 indexed tokenId, address owner, address to);
+    event MembershipRevokingContractSet(address indexed contractAddress);
+    event MembershipRevoked(uint256 indexed tokenId, address prevOwner);
+    event AddedToDenyList(address indexed account);
+    event RemovedFromDenyList(address indexed account);
 
-    /* REVOKING ------------------------------------------------------------ */
+    /* TRANSFERRING MEMBERSHIPS -------------------------------------------- */
 
-    event RevokeMembershipProposalCreated(
-        uint256 indexed tokenId,
-        address owner,
-        bool addToDenyList
-    );
-    event RevokeMembershipProposalCancelled(uint256 indexed tokenId, address owner);
-    event RevokeMembershipProposalApproved(uint256 indexed tokenId, address owner);
-    event RevokeMembershipProposalDenied(uint256 indexed tokenId, address owner);
+    event MembershipTransferContractSet(address indexed contractAddress);
 
     /* METADATA ------------------------------------------------------------ */
 
@@ -141,22 +108,15 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     ------------------------------------------------------------------------ */
 
     error NotAuthorizedToIssueMembership();
+    error NotAuthorizedToRevokeMembership();
+    error NotAuthorizedToTransferMembership();
+
     error NotDefMember();
     error AlreadyDefMember();
+    error NotOwnerOfToken();
     error OnDenyList();
 
-    error TransferNotAllowed();
-    error TransferMembershipProposalNotFound();
-    error TransferMembershipProposalEnded();
-
-    error RevokeMembershipProposalNotFound();
-    error RevokeMembershipProposalInProgress();
-    error RevokeMembershipProposalEnded();
-
-    error AlreadyVoted();
-    error NotProposalInitiator();
-
-    error NotOwnerOfToken();
+    error CannotTransferToZeroAddress();
 
     /* ------------------------------------------------------------------------
        M O D I F I E R S
@@ -165,12 +125,6 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     /// @dev Reverts if not a member
     modifier onlyDefMember() {
         if (_balanceOf[msg.sender] < 1) revert NotDefMember();
-        _;
-    }
-
-    /// @dev Reverts if not an allowed minting contract
-    modifier onlyIssuingContract() {
-        if (!allowedIssuingContracts[msg.sender]) revert NotAuthorizedToIssueMembership();
         _;
     }
 
@@ -186,26 +140,35 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
         _;
     }
 
+    /// @dev Reverts if not an allowed minting contract
+    modifier onlyMembershipIssuingContract() {
+        if (!allowedMembershipIssuingContracts[msg.sender]) revert NotAuthorizedToIssueMembership();
+        _;
+    }
+
+    /// @dev Reverts if not the allowed membership revoking
+    modifier onlyMembershipRevokingContract() {
+        if (allowedMembershipRevokingContract != msg.sender)
+            revert NotAuthorizedToRevokeMembership();
+        _;
+    }
+
+    /// @dev Reverts if not the allowed membership transfer contract
+    modifier onlyMembershipTransferContract() {
+        if (allowedMembershipTransferContract != msg.sender)
+            revert NotAuthorizedToTransferMembership();
+        _;
+    }
+
     /* ------------------------------------------------------------------------
        I N I T
     ------------------------------------------------------------------------ */
 
-    constructor(
-        address owner_,
-        IDefinitelyMetadata defaultMetadata_,
-        uint64 minTransferMembershipQuorum_,
-        uint64 maxTransferMembershipVotes_,
-        uint64 minRevokeMembershipQuorum_,
-        uint64 maxRevokeMembershipVotes_
-    ) ERC721("DEF", "Definitely Membership") Owned(owner_) {
+    constructor(address owner_, IDefinitelyMetadata defaultMetadata_)
+        ERC721("DEF", "Definitely Membership")
+        Owned(owner_)
+    {
         defaultMetadata = defaultMetadata_;
-
-        votingConfig = VotingConfig({
-            minTransferMembershipQuorum: minTransferMembershipQuorum_,
-            maxTransferMembershipVotes: maxTransferMembershipVotes_,
-            minRevokeMembershipQuorum: minRevokeMembershipQuorum_,
-            maxRevokeMembershipVotes: maxRevokeMembershipVotes_
-        });
     }
 
     /* ------------------------------------------------------------------------
@@ -216,26 +179,40 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     /// @dev The new contract will be able to mint membership tokens to people who aren't already
     ///      members, and who aren't on the deny list. There are no other restrictions so the
     ///      issuing contract must implement additional checks if necessary
-    function addIssuingContract(address issuingContract) external onlyOwner {
-        allowedIssuingContracts[issuingContract] = true;
-        emit IssuingContractAdded(issuingContract);
+    function addMembershipIssuingContract(address contractAddr) external onlyOwner {
+        allowedMembershipIssuingContracts[contractAddr] = true;
+        emit MembershipIssuingContractAdded(contractAddr);
     }
 
     /// @notice Revokes an existing membership issuing contract
     /// @dev This will prevent the contract from calling `issueMembership`
-    function revokeIssuingContract(address issuingContract) external onlyOwner {
-        allowedIssuingContracts[issuingContract] = false;
-        emit IssuingContractRevoked(issuingContract);
+    function removeMembershipIssuingContract(address contractAddr) external onlyOwner {
+        allowedMembershipIssuingContracts[contractAddr] = false;
+        emit MembershipIssuingContractRemoved(contractAddr);
+    }
+
+    /// @notice Sets the membership revoking contract
+    /// @dev The new contract will be able to burn tokens effectively revoking membership
+    function setMembershipRevokingContract(address contractAddr) external onlyOwner {
+        allowedMembershipRevokingContract = contractAddr;
+        emit MembershipRevokingContractSet(contractAddr);
+    }
+
+    /// @notice Sets the membership transferring contract
+    /// @dev The new contract will be able to bypass the soulbound mechanic and initiate a transfer
+    function setMembershipTransferContract(address contractAddr) external onlyOwner {
+        allowedMembershipTransferContract = contractAddr;
+        emit MembershipTransferContractSet(contractAddr);
     }
 
     /// @notice Updates the fallback metadata used for all tokens that haven't set an override
-    function setDefaultMetadata(IDefinitelyMetadata defaultMetadata_) external onlyOwner {
-        defaultMetadata = defaultMetadata_;
-        emit DefaultMetadataUpdated(address(defaultMetadata_));
+    function setDefaultMetadata(IDefinitelyMetadata contractAddr) external onlyOwner {
+        defaultMetadata = contractAddr;
+        emit DefaultMetadataUpdated(address(contractAddr));
     }
 
     /* ------------------------------------------------------------------------
-       M E M B E R S H I P   M I N T I N G
+       I S S U I N G   M E M B E R S H I P S
     ------------------------------------------------------------------------ */
 
     /// @notice Allows another contract to issue a membership token to someone
@@ -244,7 +221,7 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     function issueMembership(address to)
         external
         override
-        onlyIssuingContract
+        onlyMembershipIssuingContract
         whenNotDefMember(to)
         whenNotOnDenyList(to)
     {
@@ -253,184 +230,92 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     }
 
     /* ------------------------------------------------------------------------
+       R E V O K I N G   M E M B E R S H I P S
+    ------------------------------------------------------------------------ */
+
+    /// @notice Revokes a membership by burning a token
+    /// @dev Only callable by the membership revoking contract. This allows some level of
+    ///      governance for when a membership should be revoked. Optionally adds the address
+    ///      to the deny list so they cannot be issued a new membership in the future.
+    /// @param tokenId The token id of the membership to revoke
+    /// @param addToDenyList Whether to add the current owner to the deny list
+    function revokeMembership(uint256 tokenId, bool addToDenyList)
+        external
+        onlyMembershipRevokingContract
+    {
+        address prevOwner = _ownerOf[tokenId];
+        if (addToDenyList) _setDenyListStatus(prevOwner, true);
+        _burn(tokenId);
+        emit MembershipRevoked(tokenId, prevOwner);
+    }
+
+    /// @notice Adds an address to the deny list
+    /// @dev Only callable by the membership revoking contract. This allows some level of
+    ///      governance for when an address should be added to the deny list.
+    /// @param account The account to add to the deny list
+    function addAddressToDenyList(address account) public onlyMembershipRevokingContract {
+        _setDenyListStatus(account, true);
+    }
+
+    /// @notice Removes an address from the deny list
+    /// @dev Only callable by the membership revoking contract. This allows some level of
+    ///      governance for when an address should be removed from the deny list.
+    /// @param account The account to remove from the deny list
+    function removeAddressFromDenyList(address account) external onlyMembershipRevokingContract {
+        _setDenyListStatus(account, false);
+    }
+
+    /// @dev Internal function to manage deny list status and emit relevant events
+    /// @param account The account to set the deny list status for
+    /// @param isDenied Whether the account should be on the deny list or not
+    function _setDenyListStatus(address account, bool isDenied) internal {
+        if (isDenied) {
+            _denyList[account] = true;
+            emit AddedToDenyList(account);
+        } else {
+            _denyList[account] = false;
+            emit RemovedFromDenyList(account);
+        }
+    }
+
+    /* ------------------------------------------------------------------------
+       T R A N S F E R R I N G   M E M B E R S H I P S
+    ------------------------------------------------------------------------ */
+
+    /// @notice Allows an account to bypass the soulbound mechanic and transfer a membership
+    /// @dev Only callable by the membership transfer contract. This allows for some level of
+    ///      governance around when to actually allow a membership transfer to happen.
+    function transferMembership(uint256 tokenId, address to)
+        external
+        onlyMembershipTransferContract
+    {
+        if (to == address(0)) revert CannotTransferToZeroAddress();
+        address from = _ownerOf[tokenId];
+
+        // Underflow of the sender's balance is impossible because we check for
+        // ownership above and the recipient's balance can't realistically overflow.
+        unchecked {
+            _balanceOf[from]--;
+            _balanceOf[to]++;
+        }
+
+        _ownerOf[tokenId] = to;
+        delete getApproved[tokenId];
+        emit Transfer(from, to, tokenId);
+    }
+
+    /* ------------------------------------------------------------------------
        S O U L B O U N D
     ------------------------------------------------------------------------ */
 
-    /// @dev Prevents transfers unless there's a certain amount of approvals from other DEF members.
-    ///      When a transfer membership proposal is approved, `ERC721.{getApproved}` is set to the
-    //       proposal maker to enable transfers.
-    //       Also prevents an account owning more than 1 token by doing a balance check on `to`.
+    /// @dev Prevents transfers of membership tokens. If a transfer is required, use the
+    ///      approved membership transfer contract to create a proposal to call `sociallyRecover`.
     function transferFrom(
         address from,
         address to,
         uint256 id
     ) public virtual override {
-        if (_balanceOf[to] > 0) revert AlreadyDefMember();
-
-        // Get the propsal for the person receiveing the token
-        TransferMembershipProposal storage proposal = transferMembershipProposals[to];
-
-        // Don't allow transfers if...
-        //   1. there's not enough approvals
-        //   2. there's no proposal for this tokenId
-        //   3. msg.sender is not the proposal creator
-        if (
-            proposal.approvalCount < votingConfig.minTransferMembershipQuorum ||
-            proposal.tokenId != id ||
-            to != msg.sender
-        ) {
-            revert TransferNotAllowed();
-        }
-
-        // Remove the proposal on successful transfer
-        delete transferMembershipProposals[to];
-
-        super.transferFrom(from, to, id);
-    }
-
-    /// @notice If a member's wallet is compromised, they can propose a transfer
-    ///         of their membership NFT to a new wallet. Once a proposal is approved,
-    ///         the new wallet can call `transferFrom` to move their NFT.
-    /// @dev There can only be one transfer proposal for a new address at any given time. If a new
-    ///      proposal is submitted, any existing proposal will be overwritten.
-    function newTransferMembershipProposal(uint256 tokenId) external whenNotDefMember(msg.sender) {
-        address currentOwner = _ownerOf[tokenId];
-        TransferMembershipProposal storage proposal = transferMembershipProposals[msg.sender];
-
-        // If overwriting an existing proposal, delete it and emit a cancel event
-        if (proposal.tokenId != 0 && proposal.tokenId != tokenId) {
-            proposal.approvalCount = 0;
-            delete proposal.voters;
-            emit TransferMembershipProposalCancelled(tokenId, currentOwner, msg.sender);
-        }
-
-        // Init the new proposal
-        proposal.tokenId = tokenId;
-        emit TransferMembershipProposalCreated(tokenId, currentOwner, msg.sender);
-    }
-
-    /// @notice Allows a DEF member to vote for or against a membership transfer proposal
-    /// @dev The last voting member will automatically set `getApproved` to the new address so the
-    ///      new address can transfer ownership, but only if the proposal reaches quorum.
-    /// TODO: Should the last vote just automatically update the owner and emit a transfer event?
-    function voteOnTransferMembershipProposal(address newOwner, bool inFavor)
-        external
-        onlyDefMember
-    {
-        VotingConfig memory config = votingConfig;
-        TransferMembershipProposal storage proposal = transferMembershipProposals[newOwner];
-
-        if (proposal.tokenId == 0) revert TransferMembershipProposalNotFound();
-        if (
-            proposal.approvalCount == config.minTransferMembershipQuorum ||
-            proposal.voters.length == config.maxTransferMembershipVotes
-        ) revert TransferMembershipProposalEnded();
-
-        // Check if this account has voted on this proposal already
-        for (uint256 a = 0; a < proposal.voters.length; a++) {
-            if (proposal.voters[a] == msg.sender) revert AlreadyVoted();
-        }
-
-        proposal.voters.push(msg.sender);
-
-        // Remove an approval if the member says no
-        if (!inFavor && proposal.approvalCount > 0) --proposal.approvalCount;
-
-        // Add an approval if the member says yes
-        if (inFavor) ++proposal.approvalCount;
-
-        // Last vote has been reached but quorum hasn't, then deny the proposal
-        if (
-            proposal.voters.length == config.maxTransferMembershipVotes &&
-            proposal.approvalCount < config.minTransferMembershipQuorum
-        ) {
-            emit TransferMembershipProposalDenied(proposal.tokenId, owner, newOwner);
-        }
-
-        // If quorum has been reached, approve the proposal, and the new owner to transfer
-        if (proposal.approvalCount == config.minTransferMembershipQuorum) {
-            emit TransferMembershipProposalApproved(proposal.tokenId, owner, newOwner);
-            getApproved[proposal.tokenId] = newOwner;
-            emit Approval(owner, newOwner, proposal.tokenId);
-        }
-    }
-
-    /* ------------------------------------------------------------------------
-       R E V O K I N G   M E M B E R S H I P S
-    ------------------------------------------------------------------------ */
-
-    /// @notice Allows a member to propose revoking the membership of another member
-    /// @param tokenId The ID of the membership to revoke
-    /// @param addToDenyList If the owner of the revoked membership should be denied future invites
-    function newRevokeMembershipProposal(uint256 tokenId, bool addToDenyList)
-        external
-        onlyDefMember
-    {
-        address currentOwner = _ownerOf[tokenId];
-        RevokeMembershipProposal storage proposal = revokeMembershipProposals[tokenId];
-
-        // Can't update an existing proposal, it must be cancelled first otherwise
-        // the member who is having their membership revoked could keep cancelling
-        // proposals to avoid having their membership revoked
-        if (proposal.initiator == address(0)) revert RevokeMembershipProposalInProgress();
-
-        // Init the new proposal
-        proposal.initiator = msg.sender;
-        proposal.addToDenyList = addToDenyList;
-        emit RevokeMembershipProposalCreated(tokenId, currentOwner, addToDenyList);
-    }
-
-    /// @notice Allows the member who created the proposal to cancel it
-    /// @param tokenId The ID of the membership to revoke
-    function cancelRevokeMembershipProposal(uint256 tokenId) external onlyDefMember {
-        RevokeMembershipProposal storage proposal = revokeMembershipProposals[tokenId];
-        if (proposal.initiator != msg.sender) revert NotProposalInitiator();
-        delete revokeMembershipProposals[tokenId];
-        emit RevokeMembershipProposalCancelled(tokenId, owner);
-    }
-
-    /// @notice Allows a member to vote on a revoke membership proposal
-    /// @dev If the proposal reaches quorum, the last voter will burn the membership and
-    ///      optionally add the owner to the deny list if it was defined in the proposal
-    function voteOnRevokeMembershipProposal(uint256 tokenId, bool inFavor) external onlyDefMember {
-        VotingConfig memory config = votingConfig;
-        RevokeMembershipProposal storage proposal = revokeMembershipProposals[tokenId];
-
-        if (proposal.initiator == address(0)) revert RevokeMembershipProposalNotFound();
-        if (
-            proposal.approvalCount == config.minRevokeMembershipQuorum ||
-            proposal.voters.length == config.maxRevokeMembershipVotes
-        ) revert RevokeMembershipProposalEnded();
-
-        // Check if this account has voted on this proposal already
-        for (uint256 a = 0; a < proposal.voters.length; a++) {
-            if (proposal.voters[a] == msg.sender) revert AlreadyVoted();
-        }
-
-        proposal.voters.push(msg.sender);
-
-        // Remove an approval if the member says no
-        if (!inFavor && proposal.approvalCount > 0) --proposal.approvalCount;
-
-        // Add an approval if the member says yes
-        if (inFavor) ++proposal.approvalCount;
-
-        // Last vote has been reached but min approvals hasn't, then deny the proposal
-        if (
-            proposal.voters.length == config.maxRevokeMembershipVotes &&
-            proposal.approvalCount < config.minRevokeMembershipQuorum
-        ) {
-            emit RevokeMembershipProposalDenied(tokenId, owner);
-        }
-
-        // If the proposal reaches quorum, burn the token and optionally add to deny list
-        if (proposal.approvalCount == config.minRevokeMembershipQuorum) {
-            emit RevokeMembershipProposalApproved(tokenId, owner);
-            if (proposal.addToDenyList) {
-                _denyList[_ownerOf[tokenId]] = true;
-            }
-            _burn(tokenId);
-        }
+        revert NotAuthorizedToTransferMembership();
     }
 
     /* ------------------------------------------------------------------------
