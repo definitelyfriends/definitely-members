@@ -2,41 +2,23 @@
   "name": "@def-members/contracts",
   "private": true,
   "scripts": {
-    "start": "hardhat node",
-    "test": "hardhat test",
-    "coverage": "hardhat coverage",
-    "compile": "hardhat compile",
-    "clean": "hardhat clean",
-    "deploy": "hardhat clean && hardhat run scripts/deploy.ts",
-    "deploy:local": "npm run deploy -- --network localhost",
-    "deploy:goerli": "npm run deploy -- --network goerli",
-    "deploy:mainnet": "npm run deploy -- --network mainnet"
+    "test": "forge test --no-match-contract Forked",
+    "test:fork": "source .env && forge test --fork-url $RPC_URL --match-contract Forked",
+    "clean": "rm -rf types",
+    "build": "pnpm clean && pnpm compile && pnpm types",
+    "compile": "forge build --force",
+    "types": "typechain --target ethers-v5 \"out/**/!(*.t|test).sol/!(*.abi).json\" --out-dir types && tsc"
   },
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.6",
-    "@nomiclabs/hardhat-etherscan": "^3.0.3",
-    "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@ethersproject/abi": "^5.6.3",
+    "@ethersproject/bytes": "^5.6.1",
+    "@ethersproject/providers": "^5.6.8",
     "@typechain/ethers-v5": "^7.2.0",
-    "@typechain/hardhat": "^2.3.1",
-    "@types/chai": "^4.3.1",
-    "@types/mocha": "^9.1.1",
-    "@types/node": "^12.20.52",
-    "chai": "^4.3.6",
-    "dotenv": "^16.0.1",
-    "ethereum-waffle": "^3.4.4",
     "ethers": "^5.6.6",
-    "hardhat": "^2.9.6",
-    "hardhat-gas-reporter": "^1.0.8",
     "prettier": "^2.6.2",
     "prettier-plugin-solidity": "^1.0.0-beta.13",
     "solhint": "^3.3.7",
-    "solidity-coverage": "^0.7.21",
-    "ts-node": "^10.7.0",
-    "typechain": "^6.0.5",
+    "typechain": "^8.0.0",
     "typescript": "^4.6.4"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^4.6.0",
-    "@rari-capital/solmate": "^6.3.0"
   }
 }
