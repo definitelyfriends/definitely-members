@@ -18,10 +18,10 @@ forge script script/InitialDeploy.s.sol:InitialDeploy --optimizer-runs 200 --use
 mkdir -p deploys/$CHAIN_ID
 
 MEMBERSHIPS="deploys/$CHAIN_ID/DefinitelyMemberships.json"
-jq '{deployedTo: .receipts[0].contractAddress, deployer: .receipts[0].tx.from, transactionHash: .receipts[0].transactionHash}' ./broadcast/Deploy.s.sol/$CHAIN_ID/run-latest.json > $MEMBERSHIPS
+jq '{deployedTo: .receipts[0].contractAddress, deployer: .receipts[0].tx.from, transactionHash: .receipts[0].transactionHash}' ./broadcast/InitialDeploy.s.sol/$CHAIN_ID/run-latest.json > $MEMBERSHIPS
 
 METADATA="deploys/$CHAIN_ID/DefinitelyMetadata.json"
-jq '{deployedTo: .receipts[1].contractAddress, deployer: .receipts[1].tx.from, transactionHash: .receipts[1].transactionHash}' ./broadcast/Deploy.s.sol/$CHAIN_ID/run-latest.json > $METADATA
+jq '{deployedTo: .receipts[1].contractAddress, deployer: .receipts[1].tx.from, transactionHash: .receipts[1].transactionHash}' ./broadcast/InitialDeploy.s.sol/$CHAIN_ID/run-latest.json > $METADATA
 
 FAMILY="deploys/$CHAIN_ID/DefinitelyFamily.json"
-jq '{deployedTo: .receipts[2].contractAddress, deployer: .receipts[2].tx.from, transactionHash: .receipts[2].transactionHash}' ./broadcast/Deploy.s.sol/$CHAIN_ID/run-latest.json > $FAMILY
+jq '{deployedTo: .receipts[2].contractAddress, deployer: .receipts[2].tx.from, transactionHash: .receipts[2].transactionHash}' ./broadcast/InitialDeploy.s.sol/$CHAIN_ID/run-latest.json > $FAMILY
