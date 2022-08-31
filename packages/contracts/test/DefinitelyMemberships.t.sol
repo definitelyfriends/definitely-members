@@ -2,9 +2,9 @@
 pragma solidity ^0.8.15;
 
 import "forge-std/Test.sol";
-import "src/DefinitelyMemberships.sol";
-import "src/DefinitelyMetadata.sol";
-import "src/interfaces/IDefinitelyMemberships.sol";
+import "@def/DefinitelyMemberships.sol";
+import "@def/DefinitelyMetadata.sol";
+import "@def/interfaces/IDefinitelyMemberships.sol";
 import "./mocks/MockInvites.sol";
 import "./mocks/MockRevoke.sol";
 import "./mocks/MockTransfer.sol";

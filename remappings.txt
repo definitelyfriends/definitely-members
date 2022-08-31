@@ -3,3 +3,4 @@ ds-test/=packages/contracts/lib/ds-test/src/
 @openzeppelin/=packages/contracts/lib/openzeppelin-contracts/
 @solmate/=packages/contracts/lib/solmate/src/
 erc721a/=packages/contracts/lib/ERC721A/
+@def/=packages/contracts/src/
