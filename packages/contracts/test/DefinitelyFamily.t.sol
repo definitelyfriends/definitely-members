@@ -49,8 +49,8 @@ contract DefinitelyFamilyTest is Test {
         allowedMembers[2] = keccak256(abi.encodePacked(memberC));
         allowedMembers[3] = keccak256(abi.encodePacked(memberD));
 
-        metadata = new DefinitelyMetadata(owner, "ipfs://BASE_HASH/");
-        memberships = new DefinitelyMemberships(owner, address(metadata));
+        memberships = new DefinitelyMemberships(owner);
+        metadata = new DefinitelyMetadata(owner, address(memberships), "ipfs://BASE_HASH/");
         family = new DefinitelyFamily(owner, address(memberships), m.getRoot(allowedMembers));
 
         vm.prank(owner);

@@ -23,9 +23,8 @@ pragma solidity ^0.8.15;
 
 import "@solmate/auth/Owned.sol";
 import "@solmate/tokens/ERC721.sol";
-
-import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
-import {IDefinitelyMetadata} from "./interfaces/IDefinitelyMetadata.sol";
+import "./interfaces/IDefinitelyMemberships.sol";
+import "./interfaces/IDefinitelyMetadata.sol";
 
 /// @title Definitely Memberships
 /// @author DEF DAO
@@ -82,6 +81,10 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     /* ------------------------------------------------------------------------
        E V E N T S
     ------------------------------------------------------------------------ */
+
+    /* INIT ---------------------------------------------------------------- */
+
+    event DefinitelyShipping();
 
     /* ISSUING MEMBERSHIPS ------------------------------------------------- */
 
@@ -173,11 +176,8 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
        I N I T
     ------------------------------------------------------------------------ */
 
-    constructor(address owner_, address defaultMetadata_)
-        ERC721("DEF", "Definitely Membership")
-        Owned(owner_)
-    {
-        _defaultMetadata = IDefinitelyMetadata(defaultMetadata_);
+    constructor(address owner_) ERC721("DEF", "Definitely Membership") Owned(owner_) {
+        emit DefinitelyShipping();
     }
 
     /* ------------------------------------------------------------------------
@@ -378,9 +378,9 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     }
 
     /// @notice Updates the fallback metadata used for all tokens that haven't set an override
-    function setDefaultMetadata(IDefinitelyMetadata contractAddr) external onlyOwner {
-        _defaultMetadata = contractAddr;
-        emit DefaultMetadataUpdated(address(contractAddr));
+    function setDefaultMetadata(address contractAddr) external onlyOwner {
+        _defaultMetadata = IDefinitelyMetadata(contractAddr);
+        emit DefaultMetadataUpdated(contractAddr);
     }
 
     /* ------------------------------------------------------------------------

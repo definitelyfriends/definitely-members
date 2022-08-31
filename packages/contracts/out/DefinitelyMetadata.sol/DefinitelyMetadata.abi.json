@@ -7,8 +7,13 @@
         "type": "address"
       },
       {
+        "internalType": "address",
+        "name": "memberships_",
+        "type": "address"
+      },
+      {
         "internalType": "string",
-        "name": "baseURI_",
+        "name": "imageURI_",
         "type": "string"
       }
     ],
@@ -36,12 +41,38 @@
   },
   {
     "inputs": [],
-    "name": "baseURI",
+    "name": "description",
     "outputs": [
       {
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "imageURI",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "memberships",
+    "outputs": [
+      {
+        "internalType": "contract IDefinitelyMemberships",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -64,11 +95,24 @@
     "inputs": [
       {
         "internalType": "string",
-        "name": "baseURI_",
+        "name": "description_",
         "type": "string"
       }
     ],
-    "name": "setBaseURI",
+    "name": "setDescription",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "imageURI_",
+        "type": "string"
+      }
+    ],
+    "name": "setImageURI",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

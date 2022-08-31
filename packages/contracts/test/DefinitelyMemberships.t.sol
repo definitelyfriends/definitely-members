@@ -5,12 +5,12 @@ import "forge-std/Test.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "@def/DefinitelyMemberships.sol";
-import "@def/DefinitelyMetadata.sol";
 import "@def/interfaces/IDefinitelyMemberships.sol";
 import "@def/interfaces/IDefinitelyMetadata.sol";
 import "./mocks/MockInvites.sol";
 import "./mocks/MockRevoke.sol";
 import "./mocks/MockTransfer.sol";
+import "./mocks/MockMetadata.sol";
 
 contract CustomMetadata is IDefinitelyMetadata {
     function tokenURI(uint256 id) external pure returns (string memory) {
@@ -20,11 +20,11 @@ contract CustomMetadata is IDefinitelyMetadata {
 
 contract DefinitelyMembershipsTest is Test {
     DefinitelyMemberships private memberships;
-    DefinitelyMetadata private metadata;
 
     MockInvites private mockInvites;
     MockRevoke private mockRevoke;
     MockTransfer private mockTransfer;
+    MockMetadata private mockMetadata;
 
     address private owner = mkaddr("owner");
     address private memberA = mkaddr("memberA");
@@ -38,17 +38,18 @@ contract DefinitelyMembershipsTest is Test {
     }
 
     function setUp() public {
-        metadata = new DefinitelyMetadata(owner, "ipfs://BASE_HASH/");
-        memberships = new DefinitelyMemberships(owner, address(metadata));
+        memberships = new DefinitelyMemberships(owner);
 
         mockInvites = new MockInvites(address(memberships));
         mockRevoke = new MockRevoke(address(memberships));
         mockTransfer = new MockTransfer(address(memberships));
+        mockMetadata = new MockMetadata("ipfs://BASE_HASH/");
 
         vm.startPrank(owner);
         memberships.addMembershipIssuingContract(address(mockInvites));
         memberships.addMembershipRevokingContract(address(mockRevoke));
         memberships.addMembershipTransferContract(address(mockTransfer));
+        memberships.setDefaultMetadata(address(mockMetadata));
         vm.stopPrank();
     }
 
@@ -87,9 +88,9 @@ contract DefinitelyMembershipsTest is Test {
         memberships.removeMembershipTransferContract(address(transfer));
         assertEq(memberships.allowedMembershipTransferContracts(address(transfer)), false);
 
-        assertEq(memberships.defaultMetadata(), address(metadata));
+        assertEq(memberships.defaultMetadata(), address(mockMetadata));
         CustomMetadata customMetadata = new CustomMetadata();
-        memberships.setDefaultMetadata(customMetadata);
+        memberships.setDefaultMetadata(address(customMetadata));
         assertEq(memberships.defaultMetadata(), address(customMetadata));
         vm.stopPrank();
     }
