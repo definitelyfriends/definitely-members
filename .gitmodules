@@ -13,3 +13,6 @@
 [submodule "packages/contracts/lib/ds-test"]
 	path = packages/contracts/lib/ds-test
 	url = https://github.com/dapphub/ds-test
+[submodule "packages/contracts/lib/murky"]
+	path = packages/contracts/lib/murky
+	url = https://github.com/dmfxyz/murky
