@@ -14,7 +14,6 @@
             {
                 "endOfLine": "auto"
             }
-        ],
-        "reason-string": ["warn", {"maxLength": 64}]
+        ]
     }
 }
