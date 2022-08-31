@@ -71,7 +71,7 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     /* METADATA ------------------------------------------------------------ */
 
     /// @dev A fallback metadata address for all tokens that don't specify an override
-    IDefinitelyMetadata public defaultMetadata;
+    IDefinitelyMetadata private _defaultMetadata;
 
     /// @dev Allows a specific token ID to use it's own metadata address
     mapping(uint256 => IDefinitelyMetadata) public tokenMetadataOverrideAddress;
@@ -174,7 +174,7 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
         ERC721("DEF", "Definitely Membership")
         Owned(owner_)
     {
-        defaultMetadata = IDefinitelyMetadata(defaultMetadata_);
+        _defaultMetadata = IDefinitelyMetadata(defaultMetadata_);
     }
 
     /* ------------------------------------------------------------------------
@@ -321,7 +321,7 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
         if (tokenMetadataOverrideAddress[tokenId] != IDefinitelyMetadata(address(0))) {
             return tokenMetadataOverrideAddress[tokenId].tokenURI(tokenId);
         } else {
-            return defaultMetadata.tokenURI(tokenId);
+            return _defaultMetadata.tokenURI(tokenId);
         }
     }
 
@@ -375,7 +375,7 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
 
     /// @notice Updates the fallback metadata used for all tokens that haven't set an override
     function setDefaultMetadata(IDefinitelyMetadata contractAddr) external onlyOwner {
-        defaultMetadata = contractAddr;
+        _defaultMetadata = contractAddr;
         emit DefaultMetadataUpdated(address(contractAddr));
     }
 
@@ -392,5 +392,11 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     ///         allowed to become a member in the future.
     function isOnDenyList(address account) external view returns (bool) {
         return _denyList[account];
+    }
+
+    /// @notice Gets the fallback metadata contract address. Metadata can be overridden on
+    ///         a per token basis e.g. a member wants to change the image or title.
+    function defaultMetadata() external view returns (address) {
+        return address(_defaultMetadata);
     }
 }

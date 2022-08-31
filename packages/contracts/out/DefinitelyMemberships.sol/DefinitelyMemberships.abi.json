@@ -500,7 +500,7 @@
     "name": "defaultMetadata",
     "outputs": [
       {
-        "internalType": "contract IDefinitelyMetadata",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }

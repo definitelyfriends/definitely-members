@@ -2,12 +2,21 @@
 pragma solidity ^0.8.15;
 
 import "forge-std/Test.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 import "@def/DefinitelyMemberships.sol";
 import "@def/DefinitelyMetadata.sol";
 import "@def/interfaces/IDefinitelyMemberships.sol";
+import "@def/interfaces/IDefinitelyMetadata.sol";
 import "./mocks/MockInvites.sol";
 import "./mocks/MockRevoke.sol";
 import "./mocks/MockTransfer.sol";
+
+contract CustomMetadata is IDefinitelyMetadata {
+    function tokenURI(uint256 id) external pure returns (string memory) {
+        return string.concat("ipfs://CUSTOM_HASH/", Strings.toString(id));
+    }
+}
 
 contract DefinitelyMembershipsTest is Test {
     DefinitelyMemberships private memberships;
@@ -17,13 +26,19 @@ contract DefinitelyMembershipsTest is Test {
     MockRevoke private mockRevoke;
     MockTransfer private mockTransfer;
 
-    address private owner = vm.addr(uint256(keccak256(abi.encodePacked("owner"))));
-    address private memberA = vm.addr(uint256(keccak256(abi.encodePacked("memberA"))));
-    address private memberB = vm.addr(uint256(keccak256(abi.encodePacked("memberB"))));
-    address private memberC = vm.addr(uint256(keccak256(abi.encodePacked("memberC"))));
+    address private owner = mkaddr("owner");
+    address private memberA = mkaddr("memberA");
+    address private memberB = mkaddr("memberB");
+    address private memberC = mkaddr("memberC");
+
+    function mkaddr(string memory name) public returns (address) {
+        address addr = address(uint160(uint256(keccak256(abi.encodePacked(name)))));
+        vm.label(addr, name);
+        return addr;
+    }
 
     function setUp() public {
-        metadata = new DefinitelyMetadata(owner, "ipfs://baseHash/");
+        metadata = new DefinitelyMetadata(owner, "ipfs://BASE_HASH/");
         memberships = new DefinitelyMemberships(owner, address(metadata));
 
         mockInvites = new MockInvites(address(memberships));
@@ -71,13 +86,43 @@ contract DefinitelyMembershipsTest is Test {
         assertEq(memberships.allowedMembershipTransferContracts(address(transfer)), true);
         memberships.removeMembershipTransferContract(address(transfer));
         assertEq(memberships.allowedMembershipTransferContracts(address(transfer)), false);
+
+        assertEq(memberships.defaultMetadata(), address(metadata));
+        CustomMetadata customMetadata = new CustomMetadata();
+        memberships.setDefaultMetadata(customMetadata);
+        assertEq(memberships.defaultMetadata(), address(customMetadata));
         vm.stopPrank();
     }
 
     function testIssuingMemberships() public {
+        // Can issue a membership token
         assertEq(memberships.balanceOf(memberA), 0);
         mockInvites.sendImediateInvite(memberA);
         assertEq(memberships.balanceOf(memberA), 1);
+    }
+
+    function testCannotIssueMembershipToExistingMember() public {
+        assertEq(memberships.balanceOf(memberA), 0);
+        mockInvites.sendImediateInvite(memberA);
+        assertEq(memberships.balanceOf(memberA), 1);
+        vm.expectRevert(abi.encodeWithSelector(DefinitelyMemberships.AlreadyDefMember.selector));
+        mockInvites.sendImediateInvite(memberA);
+        assertEq(memberships.balanceOf(memberA), 1);
+    }
+
+    function testCannotIusseMembershipToDenyListAccount() public {
+        mockRevoke.addToDenyList(memberB);
+        assertEq(memberships.balanceOf(memberB), 0);
+        assertEq(memberships.isOnDenyList(memberB), true);
+        vm.expectRevert(abi.encodeWithSelector(DefinitelyMemberships.OnDenyList.selector));
+        mockInvites.sendImediateInvite(memberB);
+    }
+
+    function testCannotIssueMembershipIfNotFromApprovedContract() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(DefinitelyMemberships.NotAuthorizedToIssueMembership.selector)
+        );
+        memberships.issueMembership(memberC);
     }
 
     function testRevokingMemberships() public {
@@ -99,7 +144,41 @@ contract DefinitelyMembershipsTest is Test {
         assertEq(memberships.isOnDenyList(memberB), true);
     }
 
-    function testCannotTransferMemberships() public {
+    function testAddAddressToDenyList() public {
+        mockRevoke.addToDenyList(memberA);
+        assertEq(memberships.isOnDenyList(memberA), true);
+    }
+
+    function testCannotAddAddressToDenyListIfNotFromApprovedContract() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(DefinitelyMemberships.NotAuthorizedToRevokeMembership.selector)
+        );
+        memberships.addAddressToDenyList(memberA);
+    }
+
+    function testCannotRemoveAddressFromDenyListIfNotFromApprovedContract() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(DefinitelyMemberships.NotAuthorizedToRevokeMembership.selector)
+        );
+        memberships.removeAddressFromDenyList(memberA);
+    }
+
+    function testRemoveAddressToDenyList() public {
+        mockRevoke.addToDenyList(memberA);
+        assertEq(memberships.isOnDenyList(memberA), true);
+        mockRevoke.removeFromDenyList(memberA);
+        assertEq(memberships.isOnDenyList(memberA), false);
+    }
+
+    function testTransferMembership() public {
+        mockInvites.sendImediateInvite(memberA);
+        assertEq(memberships.ownerOf(1), memberA);
+        mockTransfer.transfer(1, memberB);
+        assertEq(memberships.ownerOf(1), memberB);
+        assertEq(memberships.balanceOf(memberA), 0);
+    }
+
+    function testCannotTransferMembership() public {
         mockInvites.sendImediateInvite(memberA);
         assertEq(memberships.ownerOf(1), memberA);
 
@@ -108,5 +187,39 @@ contract DefinitelyMembershipsTest is Test {
             abi.encodeWithSelector(DefinitelyMemberships.NotAuthorizedToTransferMembership.selector)
         );
         memberships.transferFrom(memberA, memberB, 1);
+    }
+
+    function testOverrideMetadataForToken() public {
+        CustomMetadata customMetadata = new CustomMetadata();
+        mockInvites.sendImediateInvite(memberA);
+        assertEq(memberships.tokenURI(1), "ipfs://BASE_HASH/1");
+        vm.prank(memberA);
+        memberships.overrideMetadataForToken(1, address(customMetadata));
+        assertEq(memberships.tokenURI(1), "ipfs://CUSTOM_HASH/1");
+    }
+
+    function testResetMetadataForToken() public {
+        CustomMetadata customMetadata = new CustomMetadata();
+        mockInvites.sendImediateInvite(memberA);
+        vm.startPrank(memberA);
+        memberships.overrideMetadataForToken(1, address(customMetadata));
+        memberships.resetMetadataForToken(1);
+        vm.stopPrank();
+        assertEq(memberships.tokenURI(1), "ipfs://BASE_HASH/1");
+    }
+
+    function testBurn() public {
+        mockInvites.sendImediateInvite(memberA);
+        assertEq(memberships.balanceOf(memberA), 1);
+        vm.prank(memberA);
+        memberships.burn(1);
+    }
+
+    function testCannotBurnTokenYouDoNotOwn() public {
+        mockInvites.sendImediateInvite(memberA);
+        assertEq(memberships.balanceOf(memberA), 1);
+        vm.prank(memberB);
+        vm.expectRevert(abi.encodeWithSelector(DefinitelyMemberships.NotOwnerOfToken.selector));
+        memberships.burn(1);
     }
 }
