@@ -96,7 +96,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "owner",
+        "name": "initiator",
         "type": "address"
       }
     ],
@@ -115,7 +115,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "owner",
+        "name": "initiator",
         "type": "address"
       }
     ],
@@ -134,7 +134,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "owner",
+        "name": "initiator",
         "type": "address"
       },
       {
@@ -159,7 +159,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "owner",
+        "name": "initiator",
         "type": "address"
       }
     ],
@@ -261,6 +261,24 @@
       }
     ],
     "name": "setOwner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "minQuorum_",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "maxVotes_",
+        "type": "uint64"
+      }
+    ],
+    "name": "setVotingConfig",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

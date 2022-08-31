@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.15;
 
-import {IDefinitelyMemberships} from "@def/interfaces/IDefinitelyMemberships.sol";
+import "@def/interfaces/IDefinitelyMemberships.sol";
 
 contract MockRevoke {
     IDefinitelyMemberships public definitelyMemberships;

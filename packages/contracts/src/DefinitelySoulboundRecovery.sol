@@ -22,8 +22,8 @@
 pragma solidity ^0.8.15;
 
 import "@solmate/auth/Owned.sol";
-import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "./interfaces/IDefinitelyMemberships.sol";
 
 /// @title Definitely Soulbound Recovery
 /// @author DEF DAO
@@ -62,10 +62,10 @@ contract DefinitelySoulboundRecovery is Owned {
        E V E N T S
     ------------------------------------------------------------------------ */
 
-    event ProposalCreated(uint256 indexed tokenId, address owner, address to);
-    event ProposalCancelled(uint256 indexed tokenId, address owner, address to);
-    event ProposalApproved(uint256 indexed tokenId, address owner, address to);
-    event ProposalDenied(uint256 indexed tokenId, address owner, address to);
+    event ProposalCreated(uint256 indexed tokenId, address to);
+    event ProposalCancelled(uint256 indexed tokenId, address to);
+    event ProposalApproved(uint256 indexed tokenId, address to);
+    event ProposalDenied(uint256 indexed tokenId, address to);
 
     /* ------------------------------------------------------------------------
        E R R O R S    
@@ -111,6 +111,10 @@ contract DefinitelySoulboundRecovery is Owned {
         votingConfig = VotingConfig(minQuorum_, maxVotes_);
     }
 
+    function setVotingConfig(uint64 minQuorum_, uint64 maxVotes_) external onlyOwner {
+        votingConfig = VotingConfig(minQuorum_, maxVotes_);
+    }
+
     /* ------------------------------------------------------------------------
        S O U L B O U N D   R E C O V E R Y
     ------------------------------------------------------------------------ */
@@ -122,19 +126,18 @@ contract DefinitelySoulboundRecovery is Owned {
     ///      proposal is submitted, any existing proposal will be overwritten. Only allows
     ///      non members to create proposals.
     function newProposal(uint256 tokenId) external whenNotDefMember(msg.sender) {
-        address currentOwner = IERC721(definitelyMemberships).ownerOf(tokenId);
         Proposal storage proposal = proposals[msg.sender];
 
         // If overwriting an existing proposal, delete it and emit a cancel event
         if (proposal.tokenId != 0 && proposal.tokenId != tokenId) {
             proposal.approvalCount = 0;
             delete proposal.voters;
-            emit ProposalCancelled(tokenId, currentOwner, msg.sender);
+            emit ProposalCancelled(tokenId, msg.sender);
         }
 
         // Init the new proposal
         proposal.tokenId = tokenId;
-        emit ProposalCreated(tokenId, currentOwner, msg.sender);
+        emit ProposalCreated(tokenId, msg.sender);
     }
 
     /// @notice Allows a DEF member to vote for or against a recovery proposal
@@ -165,12 +168,12 @@ contract DefinitelySoulboundRecovery is Owned {
         if (
             proposal.voters.length == config.maxVotes && proposal.approvalCount < config.minQuorum
         ) {
-            emit ProposalDenied(proposal.tokenId, owner, newOwner);
+            emit ProposalDenied(proposal.tokenId, newOwner);
         }
 
         // If quorum has been reached, emit an event for notifications
         if (proposal.approvalCount == config.minQuorum) {
-            emit ProposalApproved(proposal.tokenId, owner, newOwner);
+            emit ProposalApproved(proposal.tokenId, newOwner);
         }
     }
 

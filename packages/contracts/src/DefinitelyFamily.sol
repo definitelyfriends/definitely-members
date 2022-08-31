@@ -22,8 +22,8 @@
 pragma solidity ^0.8.15;
 
 import "@solmate/auth/Owned.sol";
-import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "./interfaces/IDefinitelyMemberships.sol";
 
 /// @title Definitely Family
 /// @author DEF DAO

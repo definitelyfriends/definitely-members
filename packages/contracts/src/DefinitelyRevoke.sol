@@ -22,8 +22,8 @@
 pragma solidity ^0.8.15;
 
 import "@solmate/auth/Owned.sol";
-import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "./interfaces/IDefinitelyMemberships.sol";
 
 /// @title Definitely Revoke
 /// @author DEF DAO
@@ -66,10 +66,10 @@ contract DefinitelyRevoke is Owned {
        E V E N T S
     ------------------------------------------------------------------------ */
 
-    event ProposalCreated(uint256 indexed tokenId, address owner, bool addToDenyList);
-    event ProposalCancelled(uint256 indexed tokenId, address owner);
-    event ProposalApproved(uint256 indexed tokenId, address owner);
-    event ProposalDenied(uint256 indexed tokenId, address owner);
+    event ProposalCreated(uint256 indexed tokenId, address initiator, bool addToDenyList);
+    event ProposalCancelled(uint256 indexed tokenId, address initiator);
+    event ProposalApproved(uint256 indexed tokenId, address initiator);
+    event ProposalDenied(uint256 indexed tokenId, address initiator);
 
     /* ------------------------------------------------------------------------
        E R R O R S    
@@ -116,6 +116,10 @@ contract DefinitelyRevoke is Owned {
         votingConfig = VotingConfig(minQuorum_, maxVotes_);
     }
 
+    function setVotingConfig(uint64 minQuorum_, uint64 maxVotes_) external onlyOwner {
+        votingConfig = VotingConfig(minQuorum_, maxVotes_);
+    }
+
     /* ------------------------------------------------------------------------
        R E V O K I N G   M E M B E R S H I P S
     ------------------------------------------------------------------------ */
@@ -138,7 +142,7 @@ contract DefinitelyRevoke is Owned {
         // Init the new proposal
         proposal.initiator = msg.sender;
         proposal.addToDenyList = addToDenyList;
-        emit ProposalCreated(tokenId, currentOwner, addToDenyList);
+        emit ProposalCreated(tokenId, proposal.initiator, addToDenyList);
     }
 
     /// @notice Allows the member who created the proposal to cancel it
@@ -147,7 +151,7 @@ contract DefinitelyRevoke is Owned {
         Proposal storage proposal = proposals[tokenId];
         if (proposal.initiator != msg.sender) revert NotProposalInitiator();
         delete proposals[tokenId];
-        emit ProposalCancelled(tokenId, owner);
+        emit ProposalCancelled(tokenId, proposal.initiator);
     }
 
     /// @notice Allows a member to vote on a revoke membership proposal
@@ -178,12 +182,12 @@ contract DefinitelyRevoke is Owned {
         if (
             proposal.voters.length == config.maxVotes && proposal.approvalCount < config.minQuorum
         ) {
-            emit ProposalDenied(tokenId, owner);
+            emit ProposalDenied(tokenId, proposal.initiator);
         }
 
         // If the proposal reaches quorum, revoke from the memberships contract
         if (proposal.approvalCount == config.minQuorum) {
-            emit ProposalApproved(tokenId, owner);
+            emit ProposalApproved(tokenId, proposal.initiator);
             IDefinitelyMemberships(definitelyMemberships).revokeMembership(
                 tokenId,
                 proposal.addToDenyList

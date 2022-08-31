@@ -91,12 +91,6 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
         "name": "to",
         "type": "address"
       }
@@ -112,12 +106,6 @@
         "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
       },
       {
         "indexed": false,
@@ -141,12 +129,6 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
         "name": "to",
         "type": "address"
       }
@@ -162,12 +144,6 @@
         "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
       },
       {
         "indexed": false,
@@ -264,6 +240,24 @@
       }
     ],
     "name": "setOwner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "minQuorum_",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "maxVotes_",
+        "type": "uint64"
+      }
+    ],
+    "name": "setVotingConfig",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
