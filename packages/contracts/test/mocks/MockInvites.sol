@@ -16,7 +16,7 @@ contract MockInvites {
         inviteAvailable[to] = true;
     }
 
-    function sendImediateInvite(address to) external {
+    function sendImmediateInvite(address to) external {
         definitelyMemberships.issueMembership(to);
     }
 

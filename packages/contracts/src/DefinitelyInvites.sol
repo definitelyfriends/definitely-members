@@ -21,14 +21,15 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.15;
 
-import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
+import "@solmate/auth/Owned.sol";
+import "./interfaces/IDefinitelyMemberships.sol";
 
 /// @title Definitely Invites
 /// @author DEF DAO
 /// @notice An issuing contract that uses an invites mechanism so that existing DEF members
 ///         can invite new people to DEF. It uses a cooldown system so invites can't be
 ///         spammed over and over.
-contract DefinitelyInvites {
+contract DefinitelyInvites is Owned {
     /* ------------------------------------------------------------------------
        S T O R A G E    
     ------------------------------------------------------------------------ */
@@ -59,6 +60,7 @@ contract DefinitelyInvites {
     error InviteOnCooldown();
     error NoInviteToClaim();
     error NotDefMember();
+    error AlreadyDefMember();
 
     /* ------------------------------------------------------------------------
        M O D I F I E R S    
@@ -66,18 +68,24 @@ contract DefinitelyInvites {
 
     /// @dev Reverts if an invite is currently on cooldown
     modifier whenInviteNotOnCooldown() {
-        if (memberLastSentInvite[msg.sender] + inviteCooldown < block.timestamp)
+        if (memberLastSentInvite[msg.sender] + inviteCooldown > block.timestamp) {
             revert InviteOnCooldown();
+        }
         _;
     }
 
     modifier whileInviteAvailable() {
-        if (inviteAvailable[msg.sender]) revert NoInviteToClaim();
+        if (!inviteAvailable[msg.sender]) revert NoInviteToClaim();
         _;
     }
 
-    modifier whileDefMember(address from) {
-        if (!definitelyMemberships.isDefMember(from)) revert NotDefMember();
+    modifier whileDefMember(address account) {
+        if (!definitelyMemberships.isDefMember(account)) revert NotDefMember();
+        _;
+    }
+
+    modifier whileNotDefMember(address account) {
+        if (definitelyMemberships.isDefMember(account)) revert AlreadyDefMember();
         _;
     }
 
@@ -85,9 +93,17 @@ contract DefinitelyInvites {
        I N I T
     ------------------------------------------------------------------------ */
 
-    constructor(address definitelyMemberships_, uint256 inviteCooldown_) {
+    constructor(
+        address owner_,
+        address definitelyMemberships_,
+        uint256 inviteCooldown_
+    ) Owned(owner_) {
         definitelyMemberships = IDefinitelyMemberships(definitelyMemberships_);
         inviteCooldown = inviteCooldown_;
+    }
+
+    function setInviteCooldown(uint256 cooldown) external onlyOwner {
+        inviteCooldown = cooldown;
     }
 
     /* ------------------------------------------------------------------------
@@ -98,6 +114,7 @@ contract DefinitelyInvites {
     function sendClaimableInvite(address to)
         external
         whileDefMember(msg.sender)
+        whileNotDefMember(to)
         whenInviteNotOnCooldown
     {
         inviteAvailable[to] = true;
@@ -106,9 +123,10 @@ contract DefinitelyInvites {
     }
 
     /// @notice Send an invite token directly to an address, skipping the claim step
-    function sendImediateInvite(address to)
+    function sendImmediateInvite(address to)
         external
         whileDefMember(msg.sender)
+        whileNotDefMember(to)
         whenInviteNotOnCooldown
     {
         definitelyMemberships.issueMembership(to);
@@ -126,7 +144,7 @@ contract DefinitelyInvites {
     ------------------------------------------------------------------------ */
 
     /// @notice Allows someone to claim their invite if they have one available
-    function claimInvite() external whileInviteAvailable {
+    function claimInvite() external whileInviteAvailable whileNotDefMember(msg.sender) {
         definitelyMemberships.issueMembership(msg.sender);
         emit InviteClaimed(msg.sender);
         // We don't really need to remove the available invite, but it's nice to clean up

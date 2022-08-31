@@ -98,16 +98,16 @@ contract DefinitelyMembershipsTest is Test {
     function testIssuingMemberships() public {
         // Can issue a membership token
         assertEq(memberships.balanceOf(memberA), 0);
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
         assertEq(memberships.balanceOf(memberA), 1);
     }
 
     function testCannotIssueMembershipToExistingMember() public {
         assertEq(memberships.balanceOf(memberA), 0);
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
         assertEq(memberships.balanceOf(memberA), 1);
         vm.expectRevert(abi.encodeWithSelector(DefinitelyMemberships.AlreadyDefMember.selector));
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
         assertEq(memberships.balanceOf(memberA), 1);
     }
 
@@ -116,7 +116,7 @@ contract DefinitelyMembershipsTest is Test {
         assertEq(memberships.balanceOf(memberB), 0);
         assertEq(memberships.isOnDenyList(memberB), true);
         vm.expectRevert(abi.encodeWithSelector(DefinitelyMemberships.OnDenyList.selector));
-        mockInvites.sendImediateInvite(memberB);
+        mockInvites.sendImmediateInvite(memberB);
     }
 
     function testCannotIssueMembershipIfNotFromApprovedContract() public {
@@ -128,10 +128,10 @@ contract DefinitelyMembershipsTest is Test {
 
     function testRevokingMemberships() public {
         assertEq(memberships.balanceOf(memberA), 0);
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
 
         assertEq(memberships.balanceOf(memberB), 0);
-        mockInvites.sendImediateInvite(memberB);
+        mockInvites.sendImmediateInvite(memberB);
 
         assertEq(memberships.balanceOf(memberA), 1);
         assertEq(memberships.ownerOf(1), memberA);
@@ -172,7 +172,7 @@ contract DefinitelyMembershipsTest is Test {
     }
 
     function testTransferMembership() public {
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
         assertEq(memberships.ownerOf(1), memberA);
         mockTransfer.transfer(1, memberB);
         assertEq(memberships.ownerOf(1), memberB);
@@ -180,7 +180,7 @@ contract DefinitelyMembershipsTest is Test {
     }
 
     function testCannotTransferMembership() public {
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
         assertEq(memberships.ownerOf(1), memberA);
 
         vm.prank(memberA);
@@ -192,7 +192,7 @@ contract DefinitelyMembershipsTest is Test {
 
     function testOverrideMetadataForToken() public {
         CustomMetadata customMetadata = new CustomMetadata();
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
         assertEq(memberships.tokenURI(1), "ipfs://BASE_HASH/1");
         vm.prank(memberA);
         memberships.overrideMetadataForToken(1, address(customMetadata));
@@ -201,7 +201,7 @@ contract DefinitelyMembershipsTest is Test {
 
     function testResetMetadataForToken() public {
         CustomMetadata customMetadata = new CustomMetadata();
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
         vm.startPrank(memberA);
         memberships.overrideMetadataForToken(1, address(customMetadata));
         memberships.resetMetadataForToken(1);
@@ -210,14 +210,14 @@ contract DefinitelyMembershipsTest is Test {
     }
 
     function testBurn() public {
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
         assertEq(memberships.balanceOf(memberA), 1);
         vm.prank(memberA);
         memberships.burn(1);
     }
 
     function testCannotBurnTokenYouDoNotOwn() public {
-        mockInvites.sendImediateInvite(memberA);
+        mockInvites.sendImmediateInvite(memberA);
         assertEq(memberships.balanceOf(memberA), 1);
         vm.prank(memberB);
         vm.expectRevert(abi.encodeWithSelector(DefinitelyMemberships.NotOwnerOfToken.selector));
