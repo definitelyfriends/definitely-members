@@ -15,4 +15,6 @@ interface IDefinitelyMemberships {
     function isDefMember(address account) external view returns (bool);
 
     function isOnDenyList(address account) external view returns (bool);
+
+    function memberSinceBlock(uint256 tokenId) external view returns (uint256);
 }

@@ -24,6 +24,7 @@ pragma solidity ^0.8.15;
 import "@solmate/auth/Owned.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@def/Base64.sol";
+import "./interfaces/IDefinitelyMemberships.sol";
 import "./interfaces/IDefinitelyMetadata.sol";
 
 /// @title Definitely Metadata
@@ -33,10 +34,17 @@ import "./interfaces/IDefinitelyMetadata.sol";
 contract DefinitelyMetadata is IDefinitelyMetadata, Owned {
     using Strings for uint256;
 
+    IDefinitelyMemberships public memberships;
+
     string public imageURI;
     string public description;
 
-    constructor(address owner, string memory imageURI_) Owned(owner) {
+    constructor(
+        address owner,
+        address memberships_,
+        string memory imageURI_
+    ) Owned(owner) {
+        memberships = IDefinitelyMemberships(memberships_);
         imageURI = imageURI_;
         description = "[DEF DAO](https://www.defdao.xyz/) membership token for people tinkering on the edge of the internet.";
     }
@@ -50,6 +58,8 @@ contract DefinitelyMetadata is IDefinitelyMetadata, Owned {
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        uint256 memberSinceBlock = memberships.memberSinceBlock(tokenId);
+
         string memory json = Base64.encode(
             bytes(
                 string.concat(
@@ -59,7 +69,9 @@ contract DefinitelyMetadata is IDefinitelyMetadata, Owned {
                     description,
                     '","image":"',
                     imageURI,
-                    '","attributes":[]}'
+                    '","attributes":[{"trait_type":"Member since block","value":"',
+                    memberSinceBlock.toString(),
+                    '"}]}'
                 )
             )
         );

@@ -55,6 +55,9 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     /// @dev Contracts that are allowed to issue memberships
     mapping(address => bool) public allowedMembershipIssuingContracts;
 
+    /// @dev Maps a token id to the block number it was issued at for "insight" score
+    mapping(uint256 => uint256) private _memberSinceBlock;
+
     /* REVOKING MEMBERSHIPS ------------------------------------------------ */
 
     /// @dev Contracts that are allowed to revoke memberships
@@ -192,6 +195,7 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
         whenNotOnDenyList(to)
     {
         _mint(to, nextMembershipId);
+        _memberSinceBlock[nextMembershipId] = block.number;
         emit MembershipIssued(nextMembershipId, to);
         unchecked {
             ++nextMembershipId;
@@ -392,6 +396,11 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Owned {
     ///         allowed to become a member in the future.
     function isOnDenyList(address account) external view returns (bool) {
         return _denyList[account];
+    }
+
+    /// @notice Returns the block number for when the token was issued
+    function memberSinceBlock(uint256 tokenId) public view returns (uint256) {
+        return _memberSinceBlock[tokenId];
     }
 
     /// @notice Gets the fallback metadata contract address. Metadata can be overridden on
