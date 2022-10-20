@@ -1,5 +1,4 @@
 {
-  "include": ["./types"],
   "compilerOptions": {
     "lib": ["esnext"],
     "target": "es6",
@@ -8,5 +7,5 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true
-  },
+  }
 }
