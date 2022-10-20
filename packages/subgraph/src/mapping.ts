@@ -1,11 +1,45 @@
-import { ExampleNFT, Transfer } from "../generated/ExampleNFT/ExampleNFT";
-import { Token } from "../generated/schema";
+import {
+  DefinitelyMemberships,
+  DefinitelyShipping,
+  Transfer as TransferEvent,
+} from "../generated/DefinitelyMemberships/DefinitelyMemberships";
+import { Settings, Token, Wallet } from "../generated/schema";
 
-export function handleTransfer(event: Transfer): void {
-  const contract = ExampleNFT.bind(event.address);
+export function handleInit(event: DefinitelyShipping): void {
+  const contract = DefinitelyMemberships.bind(event.address);
+  let settings = Settings.load("DefinitelyMemberships:settings");
+  if (!settings) {
+    settings = new Settings("DefinitelyMemberships:settings");
+    settings.save();
+  }
+}
 
-  const token = new Token(event.params.tokenId.toString());
-  token.owner = event.params.to;
-  token.tokenURI = contract.tokenURI(event.params.tokenId);
+export function handleTransfer(event: TransferEvent): void {
+  const contract = DefinitelyMemberships.bind(event.address);
+
+  const id = event.params.id;
+  const fromAddress = event.params.from;
+  const toAddress = event.params.to;
+
+  let fromWallet = Wallet.load(fromAddress.toHexString());
+  if (!fromWallet) {
+    fromWallet = new Wallet(fromAddress.toHexString());
+    fromWallet.address = fromAddress;
+    fromWallet.save();
+  }
+
+  let toWallet = Wallet.load(toAddress.toHexString());
+  if (!toWallet) {
+    toWallet = new Wallet(toAddress.toHexString());
+    toWallet.address = toAddress;
+    toWallet.save();
+  }
+
+  let token = Token.load(id.toString());
+  if (!token) {
+    token = new Token(id.toString());
+    token.tokenURI = contract.tokenURI(id);
+  }
+  token.owner = toWallet.id;
   token.save();
 }

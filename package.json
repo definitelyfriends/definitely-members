@@ -1,5 +1,5 @@
 {
-  "name": "web3-scaffold",
+  "name": "definitely-members",
   "private": true,
   "engines": {
     "node": "16",
@@ -14,15 +14,15 @@
     "test": "pnpm --parallel --no-bail test"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.27.1",
-    "@typescript-eslint/parser": "^5.27.1",
-    "eslint": "^8.17.0",
+    "@typescript-eslint/eslint-plugin": "^5.40.1",
+    "@typescript-eslint/parser": "^5.40.1",
+    "eslint": "^8.25.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-simple-import-sort": "^7.0.0",
-    "prettier": "^2.6.2",
-    "typescript": "^4.5.5",
-    "husky": "^8.0.0"
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-simple-import-sort": "^8.0.0",
+    "husky": "^8.0.1",
+    "prettier": "^2.7.1",
+    "typescript": "^4.8.4"
   }
 }

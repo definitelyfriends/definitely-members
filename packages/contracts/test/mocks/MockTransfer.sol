@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.17;
 
-import "@def/interfaces/IDefinitelyMemberships.sol";
+import "def/interfaces/IDefinitelyMemberships.sol";
 
 contract MockTransfer {
     IDefinitelyMemberships public definitelyMemberships;

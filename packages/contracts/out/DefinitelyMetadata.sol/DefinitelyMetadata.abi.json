@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "owner",
+        "name": "owner_",
         "type": "address"
       },
       {
@@ -32,12 +32,82 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "prevAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminRemoved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "newOwner",
         "type": "address"
       }
     ],
     "name": "OwnerUpdated",
     "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "addAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [],
@@ -94,6 +164,19 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "prevAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "removeAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "string",
         "name": "description_",
         "type": "string"
@@ -134,7 +217,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       }
     ],

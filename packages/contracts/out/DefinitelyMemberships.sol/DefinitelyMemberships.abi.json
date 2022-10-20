@@ -5,6 +5,11 @@
         "internalType": "address",
         "name": "owner_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "firstAdmin_",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -61,6 +66,44 @@
       }
     ],
     "name": "AddedToDenyList",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "prevAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminRemoved",
     "type": "event"
   },
   {
@@ -138,7 +181,7 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
@@ -183,11 +226,11 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "prevOwner",
         "type": "address"
@@ -254,11 +297,11 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "metadata",
         "type": "address"
@@ -273,7 +316,7 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       }
     ],
@@ -354,7 +397,20 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "contractAddr",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "addAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "addr",
         "type": "address"
       }
     ],
@@ -367,7 +423,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "contractAddr",
+        "name": "addr",
         "type": "address"
       }
     ],
@@ -380,7 +436,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "contractAddr",
+        "name": "addr",
         "type": "address"
       }
     ],
@@ -397,7 +453,7 @@
         "type": "address"
       }
     ],
-    "name": "allowedMembershipIssuingContracts",
+    "name": "admins",
     "outputs": [
       {
         "internalType": "bool",
@@ -412,11 +468,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "addr",
         "type": "address"
       }
     ],
-    "name": "allowedMembershipRevokingContracts",
+    "name": "allowedMembershipIssuingContract",
     "outputs": [
       {
         "internalType": "bool",
@@ -431,11 +487,30 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "addr",
         "type": "address"
       }
     ],
-    "name": "allowedMembershipTransferContracts",
+    "name": "allowedMembershipRevokingContract",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "addr",
+        "type": "address"
+      }
+    ],
+    "name": "allowedMembershipTransferContract",
     "outputs": [
       {
         "internalType": "bool",
@@ -487,7 +562,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       }
     ],
@@ -498,7 +573,7 @@
   },
   {
     "inputs": [],
-    "name": "defaultMetadata",
+    "name": "defaultMetadataAddress",
     "outputs": [
       {
         "internalType": "address",
@@ -607,7 +682,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       }
     ],
@@ -636,23 +711,10 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "nextMembershipId",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
@@ -715,7 +777,20 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "contractAddr",
+        "name": "prevAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "removeAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "addr",
         "type": "address"
       }
     ],
@@ -728,7 +803,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "contractAddr",
+        "name": "addr",
         "type": "address"
       }
     ],
@@ -741,7 +816,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "contractAddr",
+        "name": "addr",
         "type": "address"
       }
     ],
@@ -754,7 +829,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       }
     ],
@@ -854,7 +929,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "contractAddr",
+        "name": "addr",
         "type": "address"
       }
     ],
@@ -912,14 +987,14 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "id",
         "type": "uint256"
       }
     ],
     "name": "tokenMetadataOverrideAddress",
     "outputs": [
       {
-        "internalType": "contract IDefinitelyMetadata",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -931,7 +1006,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       }
     ],

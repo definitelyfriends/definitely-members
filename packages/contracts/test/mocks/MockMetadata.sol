@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@def/interfaces/IDefinitelyMetadata.sol";
+import "openzeppelin/contracts/utils/Strings.sol";
+import "def/interfaces/IDefinitelyMetadata.sol";
 
 contract MockMetadata is IDefinitelyMetadata {
     using Strings for uint256;

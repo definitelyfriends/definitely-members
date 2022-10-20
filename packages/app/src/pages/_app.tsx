@@ -1,34 +1,22 @@
-import "tailwindcss/tailwind.css";
-import "react-toastify/dist/ReactToastify.css";
-
+import { Global } from "@emotion/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AppProps } from "next/app";
-import Head from "next/head";
-import { ToastContainer } from "react-toastify";
-import {
-  createClient as createGraphClient,
-  Provider as GraphProvider,
-} from "urql";
+import { EthereumProviders } from "../components/EthereumProviders";
+import { globalStyle } from "../components/GlobalStyle";
+import SocialMeta from "../components/SocialMeta";
 
-import { EthereumProviders } from "../EthereumProviders";
+export const queryClient = new QueryClient();
 
-export const graphClient = createGraphClient({
-  url: "https://api.thegraph.com/subgraphs/name/holic/example-nft",
-});
-
-const MyApp = ({ Component, pageProps }: AppProps) => {
+export default function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
-      <Head>
-        <title>Example NFT</title>
-      </Head>
-      <GraphProvider value={graphClient}>
-        <EthereumProviders>
+      <SocialMeta />
+      <Global styles={globalStyle} />
+      <EthereumProviders>
+        <QueryClientProvider client={queryClient}>
           <Component {...pageProps} />
-        </EthereumProviders>
-      </GraphProvider>
-      <ToastContainer position="bottom-right" draggable={false} />
+        </QueryClientProvider>
+      </EthereumProviders>
     </>
   );
-};
-
-export default MyApp;
+}

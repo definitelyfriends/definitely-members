@@ -1,5 +1,15 @@
+type Settings @entity {
+  id: ID!
+}
+
 type Token @entity {
   id: ID!
-  owner: Bytes!
+  owner: Wallet
   tokenURI: String!
+}
+
+type Wallet @entity {
+  id: ID!
+  address: Bytes!
+  tokens: [Token!]! @derivedFrom(field: "owner")
 }

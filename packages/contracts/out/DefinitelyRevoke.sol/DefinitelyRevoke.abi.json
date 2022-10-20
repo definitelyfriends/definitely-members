@@ -8,7 +8,7 @@
       },
       {
         "internalType": "address",
-        "name": "definitelyMemberships_",
+        "name": "memberships_",
         "type": "address"
       },
       {
@@ -77,6 +77,44 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "prevAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminRemoved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "newOwner",
         "type": "address"
       }
@@ -90,11 +128,11 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "initiator",
         "type": "address"
@@ -109,11 +147,11 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "initiator",
         "type": "address"
@@ -128,11 +166,11 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "initiator",
         "type": "address"
@@ -153,11 +191,11 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "initiator",
         "type": "address"
@@ -169,8 +207,40 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "addAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "admins",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       }
     ],
@@ -181,7 +251,7 @@
   },
   {
     "inputs": [],
-    "name": "definitelyMemberships",
+    "name": "memberships",
     "outputs": [
       {
         "internalType": "address",
@@ -196,7 +266,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
@@ -256,6 +326,19 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "prevAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "removeAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "newOwner",
         "type": "address"
       }
@@ -287,7 +370,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "tokenId",
+        "name": "id",
         "type": "uint256"
       },
       {
