@@ -42,6 +42,7 @@ contract DefinitelyMembershipsTest is Test {
     event RemovedFromDenyList(address indexed account);
     event MembershipTransferContractAdded(address indexed contractAddress);
     event MembershipTransferContractRemoved(address indexed contractAddress);
+    event TransferLockSet(bool indexed isTransferLocked);
     event DefaultMetadataUpdated(address indexed metadata);
     event MetadataOverridden(uint256 indexed id, address indexed metadata);
     event MetadataResetToDefault(uint256 indexed id);
@@ -127,6 +128,18 @@ contract DefinitelyMembershipsTest is Test {
 
         memberships.setDefaultMetadata(address(customMetadata));
         assertEq(memberships.defaultMetadataAddress(), address(customMetadata));
+
+        vm.expectEmit(true, true, true, true);
+        emit TransferLockSet(false);
+
+        memberships.setGlobalTransferLock(false);
+        assertEq(memberships.globalTransferLocked(), false);
+
+        vm.expectEmit(true, true, true, true);
+        emit TransferLockSet(true);
+
+        memberships.setGlobalTransferLock(true);
+        assertEq(memberships.globalTransferLocked(), true);
         vm.stopPrank();
     }
 
@@ -306,6 +319,22 @@ contract DefinitelyMembershipsTest is Test {
         emit Transfer(memberA, memberB, 1);
 
         mockTransfer.transfer(1, memberB);
+        assertEq(memberships.ownerOf(1), memberB);
+        assertEq(memberships.balanceOf(memberA), 0);
+    }
+
+    function test_TransferFrom_When_GlobalTransfersUnlocked() public {
+        mockInvites.sendImmediateInvite(memberA);
+        assertEq(memberships.ownerOf(1), memberA);
+
+        vm.prank(owner);
+        memberships.setGlobalTransferLock(false);
+
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(memberA, memberB, 1);
+
+        vm.prank(memberA);
+        memberships.transferFrom(memberA, memberB, 1);
         assertEq(memberships.ownerOf(1), memberB);
         assertEq(memberships.balanceOf(memberA), 0);
     }

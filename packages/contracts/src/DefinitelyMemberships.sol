@@ -78,6 +78,8 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     /// @dev Contracts that are allowed to transfer memberships between accounts
     mapping(address => bool) private _allowedMembershipTransferContracts;
 
+    bool public globalTransferLocked;
+
     /* METADATA ------------------------------------------------------------ */
 
     /// @dev A fallback metadata address for all tokens that don't specify an override
@@ -112,6 +114,7 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
 
     event MembershipTransferContractAdded(address indexed contractAddress);
     event MembershipTransferContractRemoved(address indexed contractAddress);
+    event TransferLockSet(bool indexed isTransferLocked);
 
     /* METADATA ------------------------------------------------------------ */
 
@@ -189,6 +192,9 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
      */
     constructor(address owner_) ERC721("DEF", "Definitely Memberships") Auth(owner_) {
         emit DefinitelyShipping();
+
+        globalTransferLocked = true;
+        emit TransferLockSet(true);
     }
 
     /* ------------------------------------------------------------------------
@@ -305,7 +311,7 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
 
     /**
      * @notice
-     * Allows an account to bypass the soulbound mechanic and transfer a membership
+     * Allows an account to bypass the transfer lock mechanic and transfer a membership
      *
      * @dev
      * This allows for some level of governance around when to actually allow a
@@ -337,18 +343,19 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
 
     /**
      * @notice
-     * Overridden `transferFrom` to lock membership transfer
+     * Overridden `transferFrom` to prevent membership transfer if transfers are locked
      *
      * @dev
-     * If a transfer is required, use the approved membership transfer contract
-     * to create a proposal and `transferMembership`
+     * If a transfer is required while `globalTransferLocked` is true, use an approved
+     * membership transfer contract instead
      */
     function transferFrom(
-        address,
-        address,
-        uint256
+        address from,
+        address to,
+        uint256 id
     ) public virtual override {
-        revert NotAuthorizedToTransferMembership();
+        if (globalTransferLocked) revert NotAuthorizedToTransferMembership();
+        super.transferFrom(from, to, id);
     }
 
     /* ------------------------------------------------------------------------
@@ -510,6 +517,17 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     function setDefaultMetadata(address addr) external onlyOwnerOrAdmin {
         _defaultMetadata = address(addr);
         emit DefaultMetadataUpdated(addr);
+    }
+
+    /**
+     * @notice
+     * Updates the global transfer lock flag to lock/unlock standard ERC721 transfers
+     *
+     * @param locked If global direct ERC721 transfers should be prevented
+     */
+    function setGlobalTransferLock(bool locked) external onlyOwnerOrAdmin {
+        globalTransferLocked = locked;
+        emit TransferLockSet(locked);
     }
 
     /* ------------------------------------------------------------------------
