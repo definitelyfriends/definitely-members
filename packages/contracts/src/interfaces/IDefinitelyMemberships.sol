@@ -24,11 +24,11 @@ interface IDefinitelyMemberships {
 
     function defaultMetadataAddress() external view returns (address);
 
+    function metadataAddressForToken(uint256 id) external view returns (address);
+
     function allowedMembershipIssuingContract(address addr) external view returns (bool);
 
     function allowedMembershipRevokingContract(address addr) external view returns (bool);
 
     function allowedMembershipTransferContract(address addr) external view returns (bool);
-
-    function tokenMetadataOverrideAddress(uint256 id) external view returns (address);
 }

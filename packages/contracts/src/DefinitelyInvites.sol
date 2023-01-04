@@ -1,3 +1,6 @@
+//SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.17;
+
 /**
                                                       ...:--==***#@%%-
                                              ..:  -*@@@@@@@@@@@@@#*:  
@@ -18,16 +21,18 @@
 
 */
 
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.17;
-
-import "./lib/Auth.sol";
-import "./interfaces/IDefinitelyMemberships.sol";
+import {Auth} from "./lib/Auth.sol";
+import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
 
 /**
- * @title Definitely Invites
- * @author DEF DAO
- * @notice A membership issuing contract that uses an invites mechanism so that existing
+ * @title
+ * Definitely Invites
+ *
+ * @author
+ * DEF DAO
+ *
+ * @notice
+ * A membership issuing contract that uses an invites mechanism so that existing
  * DEF members can invite new people to DEF. It uses a cooldown system so invites can't be
  * spammed over and over.
  */
@@ -51,6 +56,9 @@ contract DefinitelyInvites is Auth {
     /* ------------------------------------------------------------------------
        E V E N T S    
     ------------------------------------------------------------------------ */
+
+    /// @dev Emitted when the invite cooldown is updated
+    event InviteCooldownUpdated(uint256 indexed cooldown);
 
     /// @dev Emitted when an invite is sent immediately, or when a claimable invite is created
     event MemberInvited(address indexed invited, address indexed invitedBy);
@@ -110,9 +118,10 @@ contract DefinitelyInvites is Auth {
         address owner_,
         address memberships_,
         uint256 inviteCooldown_
-    ) Auth(owner_, owner_) {
+    ) Auth(owner_) {
         memberships = memberships_;
         inviteCooldown = inviteCooldown_;
+        emit InviteCooldownUpdated(inviteCooldown_);
     }
 
     /* ------------------------------------------------------------------------
@@ -120,11 +129,14 @@ contract DefinitelyInvites is Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Create an invite to an address that can be claimed at a later time
-     * @dev Reverts if:
-     *       - `msg.sender` is not a DEF member
-     *       - `to` is already a DEF member
-     *       - `msg.sender` is not on cooldown for invites
+     * @notice
+     * Create an invite to an address that can be claimed at a later time
+     *
+     * @dev
+     * Reverts if:
+     *   - `msg.sender` is not a DEF member
+     *   - `to` is already a DEF member
+     *   - `msg.sender` is not on cooldown for invites
      *
      * @param to The address to create an invite for
      */
@@ -136,15 +148,19 @@ contract DefinitelyInvites is Auth {
     {
         inviteAvailable[to] = true;
         _startInviteCooldown(msg.sender);
+
         emit MemberInvited(to, msg.sender);
     }
 
     /**
-     * @notice Send an membership token directly to an address, skipping the claim step
-     * @dev Reverts if:
-     *       - `msg.sender` is not a DEF member
-     *       - `to` is already a DEF member
-     *       - `msg.sender` is not on cooldown for invites
+     * @notice
+     * Send an membership token directly to an address, skipping the claim step
+     *
+     * @dev
+     * Reverts if:
+     *   - `msg.sender` is not a DEF member
+     *   - `to` is already a DEF member
+     *   - `msg.sender` is not on cooldown for invites
      *
      * @param to The address to send the membership NFT to
      */
@@ -154,13 +170,16 @@ contract DefinitelyInvites is Auth {
         whileNotDefMember(to)
         whenInviteNotOnCooldown
     {
-        IDefinitelyMemberships(memberships).issueMembership(to);
         _startInviteCooldown(msg.sender);
+
+        IDefinitelyMemberships(memberships).issueMembership(to);
         emit MemberInvited(to, msg.sender);
     }
 
     /**
-     * @dev Starts the invite cooldown for an address
+     * @dev
+     * Starts the invite cooldown for an address
+     *
      * @param inviter The account to put on invite cooldown
      */
     function _startInviteCooldown(address inviter) internal {
@@ -172,16 +191,20 @@ contract DefinitelyInvites is Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Allows someone to claim their invite if they have one available
-     * @dev Reverts if:
-     *       - `msg.sender` doesn't have an invite available
-     *       - `msg.sender` is already a DEF member
+     * @notice
+     * Allows someone to claim their invite if they have one available
+     *
+     * @dev
+     * Reverts if:
+     *   - `msg.sender` doesn't have an invite available
+     *   - `msg.sender` is already a DEF member
      */
-    function claimInvite() external whileInviteAvailable whileNotDefMember(msg.sender) {
-        IDefinitelyMemberships(memberships).issueMembership(msg.sender);
-        emit InviteClaimed(msg.sender);
+    function claimInvite() external whileInviteAvailable {
         // We don't really need to remove the available invite, but it's nice to clean up
         inviteAvailable[msg.sender] = false;
+
+        IDefinitelyMemberships(memberships).issueMembership(msg.sender);
+        emit InviteClaimed(msg.sender);
     }
 
     /* ------------------------------------------------------------------------
@@ -189,10 +212,13 @@ contract DefinitelyInvites is Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Admin function to update the invite cooldown timer
+     * @notice
+     * Admin function to update the invite cooldown timer
+     *
      * @param cooldown The cooldown time in seconds
      */
     function setInviteCooldown(uint256 cooldown) external onlyOwnerOrAdmin {
         inviteCooldown = cooldown;
+        emit InviteCooldownUpdated(cooldown);
     }
 }

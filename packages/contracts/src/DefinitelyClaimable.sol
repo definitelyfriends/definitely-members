@@ -1,3 +1,6 @@
+//SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.17;
+
 /**
                                                       ...:--==***#@%%-
                                              ..:  -*@@@@@@@@@@@@@#*:  
@@ -18,20 +21,22 @@
 
 */
 
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.17;
-
-import "./lib/Auth.sol";
-import "openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import "./interfaces/IDefinitelyMemberships.sol";
+import {Auth} from "./lib/Auth.sol";
+import {MerkleProof} from "openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
+import {IDelegationRegistry} from "./interfaces/IDelegationRegistry.sol";
 
 /**
- * @title Definitely Claimable
- * @author DEF DAO
- * @notice A membership issuing contract that uses EIP-712 signatures to allow membership claiming
+ * @title
+ * Definitely Claimable
+ *
+ * @author
+ * DEF DAO
+ *
+ * @notice
+ * A membership issuing contract that uses EIP-712 signatures to allow membership claiming
  */
-contract DefinitelyClaimable is EIP712, Auth {
+contract DefinitelyClaimable is Auth {
     /* ------------------------------------------------------------------------
        S T O R A G E    
     ------------------------------------------------------------------------ */
@@ -39,28 +44,11 @@ contract DefinitelyClaimable is EIP712, Auth {
     /// @notice The main membership contract
     address public memberships;
 
-    /// @dev EIP-712 signing domain
-    string public constant SIGNING_DOMAIN = "DEFDAOMemberships";
+    /// @notice The address of the delegate.cash delegation registry
+    address public delegationRegistry = 0x00000000000076A84feF008CDAbe6409d2FE638B;
 
-    /// @dev EIP-712 signature version
-    string public constant SIGNATURE_VERSION = "1";
-
-    /// @dev EIP-712 signed data type hash for claiming a membership
-    bytes32 public constant CLAIM_DROP_TYPEHASH =
-        keccak256("ClaimMembership(address account,uint256 nonce)");
-
-    /// @dev EIP-712 signed data struct for claiming a membership
-    struct ClaimMembership {
-        address account;
-        uint256 nonce;
-        bytes signature;
-    }
-
-    /// @dev Approved signer public addresses
-    mapping(address => bool) public approvedSigners;
-
-    /// @dev Nonce management to avoid signature replay attacks
-    mapping(address => uint256) public nonces;
+    /// @notice The merkle root used for claiming memberships
+    bytes32 public claimableRoot;
 
     /* ------------------------------------------------------------------------
        E V E N T S    
@@ -69,17 +57,18 @@ contract DefinitelyClaimable is EIP712, Auth {
     /// @dev Whenever a membership is claimed for an existing DEF member
     event MembershipClaimed(address indexed member);
 
-    /// @dev Emitted when a new signer is added to this contract
-    event SignerAdded(address indexed signer);
+    /// @dev Whenever the claimable merkle root is updated
+    event ClaimableRootUpdated(bytes32 indexed root);
 
-    /// @dev Emitted when an existing signer is removed from this contract
-    event SignerRemoved(address indexed signer);
+    /// @dev Whenever the delegation registry address is updated
+    event DelegationRegistryUpdated(address indexed registry);
 
     /* ------------------------------------------------------------------------
        E R R O R S    
     ------------------------------------------------------------------------ */
 
-    error InvalidSignature();
+    error InvalidProof();
+    error NotDelegatedToClaim();
 
     /* ------------------------------------------------------------------------
        I N I T
@@ -88,16 +77,16 @@ contract DefinitelyClaimable is EIP712, Auth {
     /**
      * @param owner_ Contract owner address
      * @param memberships_ The main membership contract
-     * @param initialSigner_ An initial EIP-712 signing address
+     * @param initialRoot_ An initial merkle root for claiming memberships
      */
     constructor(
         address owner_,
         address memberships_,
-        address initialSigner_
-    ) EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) Auth(owner_, owner_) {
+        bytes32 initialRoot_
+    ) Auth(owner_) {
         memberships = memberships_;
-        approvedSigners[initialSigner_] = true;
-        emit SignerAdded(initialSigner_);
+        claimableRoot = initialRoot_;
+        emit ClaimableRootUpdated(initialRoot_);
     }
 
     /* ------------------------------------------------------------------------
@@ -105,29 +94,68 @@ contract DefinitelyClaimable is EIP712, Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Allows someone to claim a DEF membership with a valid signature
-     * @param signature A valid EIP-712 signature
+     * @notice
+     * Allows someone to claim a DEF membership with a valid merkle proof
+     *
+     * @param proof A merkle proof for claiming
      */
-    function claimMembership(bytes calldata signature) external {
-        // Reconstruct the signed data on-chain
-        ClaimMembership memory data = ClaimMembership({
-            account: msg.sender,
-            nonce: nonces[msg.sender],
-            signature: signature
-        });
+    function claimMembership(bytes32[] calldata proof) external {
+        if (!_verifyProof(msg.sender, proof)) revert InvalidProof();
 
-        // Hash the data for verification
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(abi.encode(CLAIM_DROP_TYPEHASH, data.account, nonces[data.account]++))
-        );
-
-        // Verifiy signature is ok
-        address addr = ECDSA.recover(digest, data.signature);
-        if (!approvedSigners[addr] || addr == address(0)) revert InvalidSignature();
-
-        // Claim the membership
         IDefinitelyMemberships(memberships).issueMembership(msg.sender);
         emit MembershipClaimed(msg.sender);
+    }
+
+    /**
+     * @notice
+     * Allows someone to claim a DEF membership with a valid merkle proof to a vault address
+     * from delegate.cash.
+     *
+     * @dev
+     * The caller must be a delegate of `vault` for the main membership contract. The vault
+     * address should be in the proof, not the caller address.
+     *
+     * @param vault Cold wallet that delegated `msg.sender` on https://delegate.cash
+     * @param proof A merkle proof for claiming
+     */
+    function claimMembership(address vault, bytes32[] calldata proof) external {
+        if (
+            !IDelegationRegistry(delegationRegistry).checkDelegateForContract(
+                msg.sender,
+                vault,
+                memberships
+            )
+        ) revert NotDelegatedToClaim();
+        if (!_verifyProof(vault, proof)) revert InvalidProof();
+
+        IDefinitelyMemberships(memberships).issueMembership(vault);
+        emit MembershipClaimed(vault);
+    }
+
+    /**
+     * @notice
+     * Checks if an account can claim a membership with a given proof
+     *
+     * @param account The account to check
+     * @param proof The merkle proof to validate
+     */
+    function canClaimMembership(address account, bytes32[] calldata proof)
+        external
+        view
+        returns (bool)
+    {
+        return _verifyProof(account, proof);
+    }
+
+    /**
+     * @notice
+     * Internal function to verify a merkle proof for claiming
+     *
+     * @param account The account to verify the proof for
+     * @param proof The merkle proof to verify
+     */
+    function _verifyProof(address account, bytes32[] calldata proof) internal view returns (bool) {
+        return MerkleProof.verify(proof, claimableRoot, keccak256(abi.encodePacked(account)));
     }
 
     /* ------------------------------------------------------------------------
@@ -135,24 +163,30 @@ contract DefinitelyClaimable is EIP712, Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Admin function to add a new EIP-712 signer address
-     * @dev Emits the SignerAdded event
+     * @notice
+     * Admin function to set the claimable merkle root
      *
-     * @param signer The address of the new signer
+     * @dev
+     * Emits the ClaimableRootUpdated event
+     *
+     * @param root The new claimable merkle root
      */
-    function addSigner(address signer) external onlyOwnerOrAdmin {
-        approvedSigners[signer] = true;
-        emit SignerAdded(signer);
+    function setClaimableRoot(bytes32 root) external onlyOwnerOrAdmin {
+        claimableRoot = root;
+        emit ClaimableRootUpdated(root);
     }
 
     /**
-     * @notice Admin function to remove an existing EIP-712 signer address
-     * @dev Emits the SignerRemoved event
+     * @notice
+     * Admin function to set the delegate.cash registry address
      *
-     * @param signer The address of the signer to remove
+     * @dev
+     * Emits the ClaimableRootUpdated event
+     *
+     * @param registry The new registry address
      */
-    function removeSigner(address signer) external onlyOwnerOrAdmin {
-        approvedSigners[signer] = false;
-        emit SignerRemoved(signer);
+    function setDelegationRegistry(address registry) external onlyOwnerOrAdmin {
+        delegationRegistry = registry;
+        emit DelegationRegistryUpdated(registry);
     }
 }

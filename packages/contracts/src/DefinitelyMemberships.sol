@@ -1,3 +1,6 @@
+//SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.17;
+
 /**
                                                       ...:--==***#@%%-
                                              ..:  -*@@@@@@@@@@@@@#*:  
@@ -18,27 +21,31 @@
 
 */
 
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.17;
-
-import "solmate/tokens/ERC721.sol";
-import "./lib/Auth.sol";
-import "./interfaces/IDefinitelyMemberships.sol";
-import "./interfaces/IDefinitelyMetadata.sol";
+import {ERC721} from "solmate/tokens/ERC721.sol";
+import {Auth} from "./lib/Auth.sol";
+import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
+import {IDefinitelyMetadata} from "./interfaces/IDefinitelyMetadata.sol";
 
 /**
- * @title Definitely Memberships
- * @author DEF DAO
- * @notice A membership token for DEF DAO in the form of a soulbound ERC721 NFT.
+ * @title
+ * Definitely Memberships
+ *
+ * @author
+ * DEF DAO
+ *
+ * @notice
+ * A membership token for DEF DAO in the form of a ERC721 NFT.
  *
  * Features:
- *   - Soulbound tokens. This can be bypassed by a membership transfer contract to
+ *   - Non-transferrable tokens. This can be bypassed by a membership transfer contract to
  *     allow for social recovery if necessary.
  *   - Approved contracts for issuing memberships. This allows different issuing
  *     mechanisms e.g. invites, props, funding etc. at the same time.
- *   - A separate contract for revoking memberships.
+ *   - Approved contracts for revoking memberships.
+ *   - Approved contracts for transferring memberships.
  *   - A separate upgradable metadata contract.
- *   - Per token metadata overriding
+ *   - Per token metadata overriding.
+ *
  */
 contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     /* ------------------------------------------------------------------------
@@ -179,12 +186,8 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
 
     /**
      * @param owner_ Contract owner address
-     * @param firstAdmin_ Initial admin address who can later add other admins
      */
-    constructor(address owner_, address firstAdmin_)
-        ERC721("DEF", "Definitely Memberships")
-        Auth(owner_, firstAdmin_)
-    {
+    constructor(address owner_) ERC721("DEF", "Definitely Memberships") Auth(owner_) {
         emit DefinitelyShipping();
     }
 
@@ -193,11 +196,14 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Allows another contract to issue a membership token to someone
-     * @dev Reverts when:
-     *  - this wasn't called from an approved issuing contract
-     *  - `to` is already a member
-     *  - `to` is on the deny list
+     * @notice
+     * Allows another contract to issue a membership token to someone
+     *
+     * @dev
+     * Reverts if:
+     *   - the caller is not an approved issuing contract
+     *   - `to` is already a member
+     *   - `to` is on the deny list
      *
      * @param to Address to issue a membership NFT to
      */
@@ -221,13 +227,16 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Revokes a membership by burning a token
-     * @dev This allows some level of governance for when a membership should be revoked.
+     * @notice
+     * Revokes a membership by burning a token
+     *
+     * @dev
+     * This allows some level of governance for when a membership should be revoked.
      * Optionally adds the address to the deny list so they cannot be issued a new
      * membership in the future.
      *
-     * Reverts when:
-     *  - this wasn't called from an approved revoking contract
+     * Reverts if:
+     *   - the caller is not an approved revoking contract
      *
      * @param id The token id of the membership to revoke
      * @param addToDenyList Whether to add the current owner to the deny list
@@ -243,12 +252,15 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @notice Adds an address to the deny list
-     * @dev This allows some level of governance for when an address should be added
+     * @notice
+     * Adds an address to the deny list
+     *
+     * @dev
+     * This allows some level of governance for when an address should be added
      * to the deny list.
      *
-     * Reverts when:
-     *  - this wasn't called from an approved revoking contract
+     * Reverts if:
+     *   - the caller is not an approved revoking contract
      *
      * @param account The account to add to the deny list
      */
@@ -257,12 +269,15 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @notice Removes an address from the deny list
-     * @dev This allows some level of governance for when an address should be removed
+     * @notice
+     * Removes an address from the deny list
+     *
+     * @dev
+     * This allows some level of governance for when an address should be removed
      * from the deny list.
      *
-     * Reverts when:
-     *  - this wasn't called from an approved revoking contract
+     * Reverts if:
+     *   - the caller is not an approved revoking contract
      *
      * @param account The account to remove from the deny list
      */
@@ -271,18 +286,17 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @dev Internal function to manage deny list status and emit relevant events
+     * @dev
+     * Internal function to manage deny list status and emit relevant events
+     *
      * @param account The account to set the deny list status for
      * @param isDenied Whether the account should be on the deny list or not
      */
     function _setDenyListStatus(address account, bool isDenied) internal {
-        if (isDenied) {
-            _denyList[account] = true;
-            emit AddedToDenyList(account);
-        } else {
-            _denyList[account] = false;
-            emit RemovedFromDenyList(account);
-        }
+        _denyList[account] = isDenied;
+
+        if (isDenied) emit AddedToDenyList(account);
+        if (!isDenied) emit RemovedFromDenyList(account);
     }
 
     /* ------------------------------------------------------------------------
@@ -290,12 +304,15 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Allows an account to bypass the soulbound mechanic and transfer a membership
-     * @dev This allows for some level of governance around when to actually allow a
+     * @notice
+     * Allows an account to bypass the soulbound mechanic and transfer a membership
+     *
+     * @dev
+     * This allows for some level of governance around when to actually allow a
      * membership transfer to happen.
      *
-     * Reverts when:
-     *  - this wasn't called from an approved transfer contract
+     * Reverts if:
+     *   - the caller is not an approved transfer contract
      *
      * @param id The token id of the membership being transferred
      * @param to The new owner of the membership token
@@ -304,8 +321,6 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
         if (to == address(0)) revert CannotTransferToZeroAddress();
         address from = _ownerOf[id];
 
-        // Underflow of the sender's balance is impossible because we check for
-        // ownership above and the recipient's balance can't realistically overflow.
         unchecked {
             _balanceOf[from]--;
             _balanceOf[to]++;
@@ -317,12 +332,15 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /* ------------------------------------------------------------------------
-       S O U L B O U N D
+       T R A N S F E R   L O C K
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Overridden `transferFrom` to lock membership transfer
-     * @dev If a transfer is required, use the approved membership transfer contract
+     * @notice
+     * Overridden `transferFrom` to lock membership transfer
+     *
+     * @dev
+     * If a transfer is required, use the approved membership transfer contract
      * to create a proposal and `transferMembership`
      */
     function transferFrom(
@@ -338,21 +356,27 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Allows a token holder to set a new metadata address for tokenURI customization
+     * @notice
+     * Allows a token holder to set a new metadata address for tokenURI customization
+     *
      * @param id The token to override metadata for
      * @param metadata The new metadata contract address for this token
      */
     function overrideMetadataForToken(uint256 id, address metadata) external {
         if (_ownerOf[id] != msg.sender) revert NotOwnerOfToken();
         _tokenMetadataOverrideAddress[id] = address(metadata);
+        emit MetadataOverridden(id, metadata);
     }
 
     /**
-     * @notice Allows a token holder to use the default metadata address for their token
+     * @notice
+     * Allows a token holder to use the default metadata address for their token
+     *
      * @param id The token that should use the default metadata contract
      */
     function resetMetadataForToken(uint256 id) external {
         delete _tokenMetadataOverrideAddress[id];
+        emit MetadataResetToDefault(id);
     }
 
     /* ------------------------------------------------------------------------
@@ -360,7 +384,9 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Burn your membership token
+     * @notice
+     * Burn your membership token
+     *
      * @param id The token you want to burn
      */
     function burn(uint256 id) external {
@@ -369,15 +395,20 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @dev Return the metadata override if present, or fall back to the default metadata address
+     * @notice
+     * ERC-721 tokenURI returns the metadata for a given token
+     *
+     * @dev
+     * Returns the metadata override if present, or fall back to the default metadata address
+     *
      * @param id The token id to get metadata for
      */
     function tokenURI(uint256 id) public view virtual override returns (string memory) {
-        if (_tokenMetadataOverrideAddress[id] != address(0)) {
-            return IDefinitelyMetadata(_tokenMetadataOverrideAddress[id]).tokenURI(id);
-        } else {
-            return IDefinitelyMetadata(_defaultMetadata).tokenURI(id);
-        }
+        address metadataOverride = _tokenMetadataOverrideAddress[id];
+        return
+            IDefinitelyMetadata(
+                metadataOverride != address(0) ? metadataOverride : _defaultMetadata
+            ).tokenURI(id);
     }
 
     /* ------------------------------------------------------------------------
@@ -385,8 +416,11 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Adds a new membership issuing contract
-     * @dev The new contract will be able to mint membership tokens to people who aren't already
+     * @notice
+     * Adds a new membership issuing contract
+     *
+     * @dev
+     * The new contract will be able to mint membership tokens to people who aren't already
      * members, and who aren't on the deny list. There are no other restrictions so the issuing
      * contract must implement additional checks if necessary
      *
@@ -398,8 +432,12 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @notice Removes an existing membership issuing contract
-     * @dev This will prevent the contract from calling `issueMembership`
+     * @notice
+     * Removes an existing membership issuing contract
+     *
+     * @dev
+     * This will prevent the contract from calling `issueMembership`
+     *
      * @param addr A membership issuing contract address
      */
     function removeMembershipIssuingContract(address addr) external onlyOwnerOrAdmin {
@@ -408,8 +446,12 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @notice Adds a new membership revoking contract
-     * @dev The new contract will be able to burn tokens effectively revoking membership
+     * @notice
+     * Adds a new membership revoking contract
+     *
+     * @dev
+     * The new contract will be able to burn tokens effectively revoking membership
+     *
      * @param addr A membership revoking contract address
      */
     function addMembershipRevokingContract(address addr) external onlyOwnerOrAdmin {
@@ -418,8 +460,12 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @notice Removes an existing membership revoking contract
-     * @dev This will prevent the contract from calling `revokeMembership`
+     * @notice
+     * Removes an existing membership revoking contract
+     *
+     * @dev
+     * This will prevent the contract from calling `revokeMembership`
+     *
      * @param addr A membership revoking contract address
      */
     function removeMembershipRevokingContract(address addr) external onlyOwnerOrAdmin {
@@ -428,8 +474,12 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @notice Adds a new membership transfer contract
-     * @dev The new contract will be able to bypass the soulbound mechanic and transfer tokens
+     * @notice
+     * Adds a new membership transfer contract
+     *
+     * @dev
+     * The new contract will be able to bypass the transfer lock mechanic and transfer tokens
+     *
      * @param addr A membership transfer contract address
      */
     function addMembershipTransferContract(address addr) external onlyOwnerOrAdmin {
@@ -438,8 +488,12 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @notice Removes an existing membership transfer contract
-     * @dev This will prevent the contract from calling `transferMembership`
+     * @notice
+     * Removes an existing membership transfer contract
+     *
+     * @dev
+     * This will prevent the contract from calling `transferMembership`
+     *
      * @param addr A membership transfer contract address
      */
     function removeMembershipTransferContract(address addr) external onlyOwnerOrAdmin {
@@ -448,7 +502,9 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @notice Updates the fallback metadata used for all tokens that haven't set an override
+     * @notice
+     * Updates the fallback metadata used for all tokens that haven't set an override
+     *
      * @param addr A metadata contract address
      */
     function setDefaultMetadata(address addr) external onlyOwnerOrAdmin {
@@ -468,8 +524,11 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
     }
 
     /**
-     * @notice Checks if an account is on the DEF deny list
-     * @dev If the account is on the deny list then they will not be allowed to become a member
+     * @notice
+     * Checks if an account is on the DEF deny list
+     *
+     * @dev
+     * If the account is on the deny list then they will not be allowed to become a member
      * until they are removed from the deny list by a revoking contract.
      */
     function isOnDenyList(address account) external view returns (bool) {
@@ -481,6 +540,14 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
      */
     function memberSinceBlock(uint256 id) external view returns (uint256) {
         return _memberSinceBlock[id];
+    }
+
+    /**
+     * @notice Gets the metadata address for a given token
+     */
+    function metadataAddressForToken(uint256 id) external view returns (address) {
+        address metadataOverride = _tokenMetadataOverrideAddress[id];
+        return metadataOverride != address(0) ? metadataOverride : _defaultMetadata;
     }
 
     /**
@@ -509,12 +576,5 @@ contract DefinitelyMemberships is IDefinitelyMemberships, ERC721, Auth {
      */
     function allowedMembershipTransferContract(address addr) external view returns (bool) {
         return _allowedMembershipTransferContracts[addr];
-    }
-
-    /**
-     * @notice Returns the metadata override address if set for a paricular token
-     */
-    function tokenMetadataOverrideAddress(uint256 id) external view returns (address) {
-        return _tokenMetadataOverrideAddress[id];
     }
 }

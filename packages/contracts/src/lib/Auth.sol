@@ -77,14 +77,10 @@ abstract contract Auth {
     /**
      * @dev Sets the initial owner and a first admin upon creation.
      * @param owner_ The initial owner of the contract
-     * @param admin_ An initial admin of the contract
      */
-    constructor(address owner_, address admin_) {
+    constructor(address owner_) {
         owner = owner_;
         emit OwnerUpdated(address(0), owner_);
-
-        admins[admin_] = true;
-        emit AdminAdded(address(0), admin_);
     }
 
     /* ------------------------------------------------------------------------
@@ -108,7 +104,7 @@ abstract contract Auth {
      */
     function addAdmin(address newAdmin) public virtual onlyOwnerOrAdmin {
         admins[newAdmin] = true;
-        emit AdminAdded(address(0), newAdmin);
+        emit AdminAdded(msg.sender, newAdmin);
     }
 
     /**
@@ -118,6 +114,6 @@ abstract contract Auth {
      */
     function removeAdmin(address prevAdmin) public virtual onlyOwnerOrAdmin {
         admins[prevAdmin] = false;
-        emit AdminRemoved(address(0), prevAdmin);
+        emit AdminRemoved(msg.sender, prevAdmin);
     }
 }

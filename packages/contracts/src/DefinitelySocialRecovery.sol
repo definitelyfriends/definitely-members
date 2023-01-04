@@ -1,3 +1,6 @@
+//SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.17;
+
 /**
                                                       ...:--==***#@%%-
                                              ..:  -*@@@@@@@@@@@@@#*:  
@@ -18,19 +21,21 @@
 
 */
 
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.17;
-
-import "./lib/Auth.sol";
-import "./interfaces/IDefinitelyMemberships.sol";
-import "openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {Auth} from "./lib/Auth.sol";
+import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
+import {IERC721} from "openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /**
- * @title Definitely Soulbound Recovery
- * @author DEF DAO
- * @notice A contract to socially recover a membership based on a simple voting mechanism.
+ * @title
+ * Definitely Social Recovery
+ *
+ * @author
+ * DEF DAO
+ *
+ * @notice
+ * A contract to socially recover a membership based on a simple voting mechanism.
  */
-contract DefinitelySoulboundRecovery is Auth {
+contract DefinitelySocialRecovery is Auth {
     /* ------------------------------------------------------------------------
        S T O R A G E
     ------------------------------------------------------------------------ */
@@ -115,28 +120,29 @@ contract DefinitelySoulboundRecovery is Auth {
         address memberships_,
         uint64 minQuorum_,
         uint64 maxVotes_
-    ) Auth(owner_, owner_) {
+    ) Auth(owner_) {
         memberships = memberships_;
         votingConfig = VotingConfig(minQuorum_, maxVotes_);
     }
 
-    function setVotingConfig(uint64 minQuorum_, uint64 maxVotes_) external onlyOwner {
-        votingConfig = VotingConfig(minQuorum_, maxVotes_);
-    }
-
     /* ------------------------------------------------------------------------
-       S O U L B O U N D   R E C O V E R Y
+       S O C I A L   R E C O V E R Y
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Allows someone to propose a transfer of a membership token to another address
-     * @dev If a member's wallet is compromised, they can propose a transfer of their
+     * @notice
+     * Allows someone to propose a transfer of a membership token to another address
+     *
+     * @dev
+     * If a member's wallet is compromised, they can propose a transfer of their
      * membership NFT to a new wallet. Once a proposal is approved, the new wallet can call
      * `recoverMembership` to move their NFT.
      *
      * There can only be one proposal for a new address at any given time. If a new
      * proposal is submitted, any existing proposal will be overwritten. Only allows
      * non members to create proposals.
+     *
+     * @param id The ID of the membership to transfer
      */
     function newProposal(uint256 id) external whenNotDefMember(msg.sender) {
         Proposal storage proposal = proposals[msg.sender];
@@ -154,14 +160,17 @@ contract DefinitelySoulboundRecovery is Auth {
     }
 
     /**
-     * @notice Allows a member to vote on a transfer membership proposal
-     * @dev If the proposal reaches quorum, it "unlocks" the ability for the new owner
+     * @notice
+     * Allows a member to vote on a transfer membership proposal
+     *
+     * @dev
+     * If the proposal reaches quorum, it "unlocks" the ability for the new owner
      * to call `recoverMembership` and get their NFT transferred.
      *
      * Reverts if:
-     *  - the proposal doesn't exist
-     *  - the proposal has ended
-     *  - `msg.sender` has already voted
+     *   - the proposal doesn't exist
+     *   - the proposal has ended
+     *   - `msg.sender` has already voted
      *
      * @param newOwner The new owner that created the proposal
      * @param inFavor Whether the caller is in favor of the proposal or not
@@ -201,17 +210,20 @@ contract DefinitelySoulboundRecovery is Auth {
     }
 
     /**
-     * @notice Recovers a membership token once a transfer proposal has been approved
-     * @dev If the proposal is approved, the membership NFT will be transferred to the caller
+     * @notice
+     * Recovers a membership token once a transfer proposal has been approved
+     *
+     * @dev
+     * If the proposal is approved, the membership NFT will be transferred to the caller
      *
      * Reverts if:
-     *  - the proposal doesn't exist
-     *  - the proposal doesn't have enough votes to approve
+     *   - the proposal doesn't exist
+     *   - the proposal doesn't have enough votes to approve
      *
      * @param id The token id of the NFT to transfer
      */
     function recoverMembership(uint256 id) external {
-        // Get the propsal for the person receiveing the token
+        // Get the proposal for the person receiving the token
         Proposal storage proposal = proposals[msg.sender];
 
         // Check if it can be transferred
@@ -221,5 +233,20 @@ contract DefinitelySoulboundRecovery is Auth {
 
         // Call `transferMembership` on the memberships contract to transfer to msg.sender
         IDefinitelyMemberships(memberships).transferMembership(id, msg.sender);
+    }
+
+    /* ------------------------------------------------------------------------
+       A D M I N
+    ------------------------------------------------------------------------ */
+
+    /**
+     * @notice
+     * Admin function to update the voting configuration
+     *
+     * @param minQuorum_ The min number of votes to approve a proposal
+     * @param maxVotes_ The max number of votes a proposal can have
+     */
+    function setVotingConfig(uint64 minQuorum_, uint64 maxVotes_) external onlyOwnerOrAdmin {
+        votingConfig = VotingConfig(minQuorum_, maxVotes_);
     }
 }

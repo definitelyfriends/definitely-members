@@ -1,3 +1,6 @@
+//SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.17;
+
 /**
                                                       ...:--==***#@%%-
                                              ..:  -*@@@@@@@@@@@@@#*:  
@@ -18,20 +21,19 @@
 
 */
 
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.17;
-
-import "./lib/Auth.sol";
-import "./interfaces/IDefinitelyMemberships.sol";
-import "openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {Auth} from "./lib/Auth.sol";
+import {IDefinitelyMemberships} from "./interfaces/IDefinitelyMemberships.sol";
+import {IERC721} from "openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /**
- * @title Definitely Revoke
- * @author DEF DAO
- * @notice A contract to revoke memberships based on a simple voting mechanism.
- * @dev This initial implementation doesn't include `addToDenyList` and `removeFromDenyList` from
- * the memberships contract, however adding to the deny list is possible when creating a new
- * proposal to revoke a membership which is ok for v0.1.
+ * @title
+ * Definitely Revoke v1
+ *
+ * @author
+ * DEF DAO
+ *
+ * @notice
+ * A contract to revoke memberships based on a simple voting mechanism.
  */
 contract DefinitelyRevoke is Auth {
     /* ------------------------------------------------------------------------
@@ -120,7 +122,7 @@ contract DefinitelyRevoke is Auth {
         address memberships_,
         uint64 minQuorum_,
         uint64 maxVotes_
-    ) Auth(owner_, owner_) {
+    ) Auth(owner_) {
         memberships = memberships_;
         votingConfig = VotingConfig(minQuorum_, maxVotes_);
     }
@@ -130,10 +132,13 @@ contract DefinitelyRevoke is Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Allows a member to propose revoking the membership of another member
-     * @dev Reverts if:
-     *       - `msg.sender` currently owns the token they are attempting to revoke
-     *       - there is a proposal in progress for `id`
+     * @notice
+     * Allows a member to propose revoking the membership of another member
+     *
+     * @dev
+     * Reverts if:
+     *   - `msg.sender` currently owns the token they are attempting to revoke
+     *   - there is a proposal in progress for `id`
      *
      * @param id The ID of the membership to revoke
      * @param addToDenyList If the owner of the revoked token should be denied future membership
@@ -143,8 +148,7 @@ contract DefinitelyRevoke is Auth {
         Proposal storage proposal = proposals[id];
 
         // Prevent the current owner from creating a proposal
-        if (msg.sender == currentOwner || tx.origin == currentOwner)
-            revert CannotCreateProposalForSelf();
+        if (msg.sender == currentOwner) revert CannotCreateProposalForSelf();
 
         // Can't update an existing proposal, it must be cancelled first since it may
         // have votes in progress
@@ -157,9 +161,12 @@ contract DefinitelyRevoke is Auth {
     }
 
     /**
-     * @notice Allows the member who created the proposal to cancel it
-     * @dev Reverts if:
-     *       - `msg.sender` did not initiate the proposal
+     * @notice
+     * Allows the member who created the proposal to cancel it
+     *
+     * @dev
+     * Reverts if:
+     *   - `msg.sender` did not initiate the proposal
      *
      * @param id The ID of the proposal to cancel (the membership token id)
      */
@@ -171,14 +178,17 @@ contract DefinitelyRevoke is Auth {
     }
 
     /**
-     * @notice Allows a member to vote on a revoke membership proposal
-     * @dev If the proposal reaches quorum, the last voter will burn the membership and
+     * @notice
+     * Allows a member to vote on a revoke membership proposal
+     *
+     * @dev
+     * If the proposal reaches quorum, the last voter will burn the membership and
      * optionally add the owner to the deny list if it was defined in the proposal
      *
      * Reverts if:
-     *  - the proposal doesn't exist
-     *  - the proposal has ended
-     *  - `msg.sender` has already voted
+     *   - the proposal doesn't exist
+     *   - the proposal has ended
+     *   - `msg.sender` has already voted
      *
      * @param id The ID of the proposal to cancel (the membership token id)
      */
@@ -222,7 +232,9 @@ contract DefinitelyRevoke is Auth {
     ------------------------------------------------------------------------ */
 
     /**
-     * @notice Admin function to update the voting configuration
+     * @notice
+     * Admin function to update the voting configuration
+     *
      * @param minQuorum_ The min number of votes to approve a proposal
      * @param maxVotes_ The max number of votes a proposal can have
      */

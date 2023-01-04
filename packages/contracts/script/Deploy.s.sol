@@ -8,7 +8,7 @@ import "def/DefinitelyMetadata.sol";
 import "def/DefinitelyClaimable.sol";
 import "def/DefinitelyInvites.sol";
 import "def/DefinitelyRevoke.sol";
-import "def/DefinitelySoulboundRecovery.sol";
+import "def/DefinitelySocialRecovery.sol";
 
 contract InitialDeploy is Script {
     // Deployable contracts
@@ -17,12 +17,9 @@ contract InitialDeploy is Script {
     DefinitelyClaimable public claimable;
     DefinitelyInvites public invites;
     DefinitelyRevoke public revoke;
-    DefinitelySoulboundRecovery public recovery;
+    DefinitelySocialRecovery public recovery;
 
     function writeContractJSON(address deployedTo, string memory filename) public {
-        // Get the chain ID
-        string memory chainId = vm.envString("FOUNDRY_CHAIN_ID");
-
         string memory json = string.concat(
             '{"address": "',
             vm.toString(deployedTo),
@@ -32,7 +29,13 @@ contract InitialDeploy is Script {
         );
 
         vm.writeFile(
-            string.concat("packages/contracts/deploys/", filename, ".", chainId, ".json"),
+            string.concat(
+                "packages/contracts/deploys/",
+                filename,
+                ".",
+                vm.toString(block.chainid),
+                ".json"
+            ),
             json
         );
     }
@@ -40,18 +43,17 @@ contract InitialDeploy is Script {
     function run() public {
         // Deployment config
         address owner = msg.sender;
-        address admin = msg.sender;
-        address signer = address(0xBEEF);
+        bytes32 claimableRoot = "";
 
         // Start deployment
         vm.startBroadcast();
 
         // Deploy membership contract
-        memberships = new DefinitelyMemberships(owner, admin);
+        memberships = new DefinitelyMemberships(owner);
 
         // Deploy metadata contract
         metadata = new DefinitelyMetadata(
-            admin,
+            owner,
             address(memberships),
             "ipfs://QmNTMDN9xVFxD9Z2Cfh9sHYc3RJEMBq2Jr3dBqjDmWDTLZ/"
         );
@@ -60,26 +62,21 @@ contract InitialDeploy is Script {
         memberships.setDefaultMetadata(address(metadata));
 
         // Deploy claimable memberships contract
-        claimable = new DefinitelyClaimable(owner, address(memberships), signer);
+        claimable = new DefinitelyClaimable(owner, address(memberships), claimableRoot);
 
         // Deploy the invites contract
-        uint256 inviteCooldown = 24 hours;
+        uint256 inviteCooldown = 0;
         invites = new DefinitelyInvites(owner, address(memberships), inviteCooldown);
 
         // Voting configs
-        uint64 minQuorum = 7;
+        uint64 minQuorum = 6;
         uint64 maxVotes = 10;
 
         // Deploy the membership revoking contract
         revoke = new DefinitelyRevoke(owner, address(memberships), minQuorum, maxVotes);
 
         // Deploy the membership recovery contract
-        recovery = new DefinitelySoulboundRecovery(
-            owner,
-            address(memberships),
-            minQuorum,
-            maxVotes
-        );
+        recovery = new DefinitelySocialRecovery(owner, address(memberships), minQuorum, maxVotes);
 
         // Add issuing contracts
         memberships.addMembershipIssuingContract(address(claimable));
@@ -95,7 +92,7 @@ contract InitialDeploy is Script {
         writeContractJSON(address(metadata), "DefinitelyMetadata");
         writeContractJSON(address(claimable), "DefinitelyClaimable");
         writeContractJSON(address(revoke), "DefinitelyRevoke");
-        writeContractJSON(address(recovery), "DefinitelySoulboundRecovery");
+        writeContractJSON(address(recovery), "DefinitelySocialRecovery");
 
         // Finish deployment
         vm.stopBroadcast();

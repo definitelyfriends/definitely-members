@@ -6,6 +6,7 @@
     "quotes": ["off", "double"],
     "avoid-low-level-calls": "off",
     "no-empty-blocks": "off",
-    "not-rely-on-time": "off"
+    "not-rely-on-time": "off",
+    "func-name-mixedcase": "off"
   }
 }
