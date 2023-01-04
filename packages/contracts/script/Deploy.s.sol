@@ -43,7 +43,14 @@ contract InitialDeploy is Script {
     function run() public {
         // Deployment config
         address owner = msg.sender;
-        bytes32 claimableRoot = 0xf210ee64e385a234ccf041352f2222cc6b7765902a5148b3a685489ca4a02b3a;
+
+        // Merkle root with initial users:
+        // gear.samking.eth
+        // frolic.eth
+        // jamiedubs.eth
+        // chd.eth
+        // 0xyoshi.eth
+        bytes32 claimableRoot = 0x714eddee19e5de4d354f3b5cd05b651a60b13b0181a79cfa5d84799bb31f28cd;
 
         // Start deployment
         vm.startBroadcast();
@@ -51,11 +58,18 @@ contract InitialDeploy is Script {
         // Deploy membership contract
         memberships = new DefinitelyMemberships(owner);
 
+        // Add some admin accounts
+        memberships.addAdmin(0x34b944a2A4F4c49B34f7a12Ee570cA10e2039AB1); // gear.samking.eth
+        memberships.addAdmin(0xC9C022FCFebE730710aE93CA9247c5Ec9d9236d0); // frolic.eth
+        memberships.addAdmin(0xD9C4475E2dd89a9a0aD0C1E9a1e1bb28Df7BA298); // jamiedubs.eth
+        memberships.addAdmin(0x0ec364eFccB98eD3656C280a816631C1663eF0ba); // chd.eth
+        memberships.addAdmin(0xE332de3c84C305698675A73F366061941C78e3b4); // 0xyoshi.eth
+
         // Deploy metadata contract
         metadata = new DefinitelyMetadata(
             owner,
             address(memberships),
-            "ipfs://QmNTMDN9xVFxD9Z2Cfh9sHYc3RJEMBq2Jr3dBqjDmWDTLZ/"
+            "ipfs://QmNTMDN9xVFxD9Z2Cfh9sHYc3RJEMBq2Jr3dBqjDmWDTLZ"
         );
 
         // Set the default metadata contract
