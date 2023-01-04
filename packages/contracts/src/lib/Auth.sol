@@ -98,7 +98,7 @@ abstract contract Auth {
     }
 
     /**
-     * @notice Adds `newAdmin` as an amdin of the contract
+     * @notice Adds `newAdmin` as an admin of the contract
      * @dev Can only be called by the current owner or an admin
      * @param newAdmin A new admin of the contract
      */
@@ -108,7 +108,7 @@ abstract contract Auth {
     }
 
     /**
-     * @notice Removes `prevAdmin` as an amdin of the contract
+     * @notice Removes `prevAdmin` as an admin of the contract
      * @dev Can only be called by the current owner or an admin
      * @param prevAdmin The admin to remove
      */
