@@ -43,7 +43,7 @@ contract InitialDeploy is Script {
     function run() public {
         // Deployment config
         address owner = msg.sender;
-        bytes32 claimableRoot = "";
+        bytes32 claimableRoot = 0xf210ee64e385a234ccf041352f2222cc6b7765902a5148b3a685489ca4a02b3a;
 
         // Start deployment
         vm.startBroadcast();
