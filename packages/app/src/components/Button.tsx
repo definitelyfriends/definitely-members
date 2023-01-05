@@ -37,7 +37,7 @@ const StyledButton = styled.button<ButtonProps>`
   background: var(--foreground);
   color: var(--background);
   padding: 1rem 1.5rem;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   position: relative;
   overflow: hidden;
 

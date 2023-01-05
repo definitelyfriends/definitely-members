@@ -105,6 +105,7 @@ contract InitialDeploy is Script {
         writeContractJSON(address(memberships), "DefinitelyMemberships");
         writeContractJSON(address(metadata), "DefinitelyMetadata");
         writeContractJSON(address(claimable), "DefinitelyClaimable");
+        writeContractJSON(address(invites), "DefinitelyInvites");
         writeContractJSON(address(revoke), "DefinitelyRevoke");
         writeContractJSON(address(recovery), "DefinitelySocialRecovery");
 

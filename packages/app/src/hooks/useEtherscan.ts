@@ -1,23 +1,20 @@
 import { useCallback } from "react";
-import { etherscanBlockExplorers, useNetwork } from "wagmi";
+import { goerli, mainnet } from "wagmi/chains";
 import { targetChainId } from "../utils/contracts";
 
 export function useEtherscan() {
-  const { chain } = useNetwork();
-  const chainId = chain ? chain.id : targetChainId;
-
-  let explorerURL = etherscanBlockExplorers.mainnet.url;
-  if (chainId === 5) {
-    explorerURL = etherscanBlockExplorers.goerli.url;
+  let explorerURL = mainnet.blockExplorers?.default.url;
+  if (targetChainId === 5) {
+    explorerURL = goerli.blockExplorers?.default.url;
   }
 
   const getTransactionUrl = useCallback(
-    (hash: string) => `${explorerURL}/tx/${hash}`,
+    (hash: string) => explorerURL && `${explorerURL}/tx/${hash}`,
     [explorerURL]
   );
 
   const getAddressUrl = useCallback(
-    (address: string) => `${explorerURL}/address/${address}`,
+    (address: string) => explorerURL && `${explorerURL}/address/${address}`,
     [explorerURL]
   );
 

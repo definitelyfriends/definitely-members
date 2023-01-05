@@ -80,9 +80,11 @@ export const globalStyle = css`
 
   a {
     color: var(--foreground);
-    text-decoration: none;
+    text-decoration: underline;
+    text-decoration-color: rgba(var(--foreground-alpha), 0.4);
+
     &:hover {
-      text-decoration: underline;
+      text-decoration-color: rgba(var(--foreground-alpha), 0.8);
     }
   }
 `;

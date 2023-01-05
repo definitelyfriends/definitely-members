@@ -1,6 +1,12 @@
-// import ExampleNFTMainnet from "@definitely-members/contracts/deploys/nft.1.json";
-// import ExampleNFTGoerli from "@definitely-members/contracts/deploys/nft.5.json";
-// import ExampleNFTABI from "../abis/ExampleNFT";
+import DefinitelyClaimableMainnet from "@definitely-members/contracts/deploys/DefinitelyClaimable.1.json";
+import DefinitelyClaimableGoerli from "@definitely-members/contracts/deploys/DefinitelyClaimable.5.json";
+import DefinitelyInvitesMainnet from "@definitely-members/contracts/deploys/DefinitelyInvites.1.json";
+import DefinitelyInvitesGoerli from "@definitely-members/contracts/deploys/DefinitelyInvites.5.json";
+import DefinitelyMembershipsMainnet from "@definitely-members/contracts/deploys/DefinitelyMemberships.1.json";
+import DefinitelyMembershipsGoerli from "@definitely-members/contracts/deploys/DefinitelyMemberships.5.json";
+import DefinitelyClaimableABI from "../abis/DefinitelyClaimable";
+import DefinitelyInvitesABI from "../abis/DefinitelyInvites";
+import DefinitelyMembershipsABI from "../abis/DefinitelyMemberships";
 
 // Will default to goerli if nothing set in the ENV
 export const targetChainId = parseInt(
@@ -8,8 +14,26 @@ export const targetChainId = parseInt(
   10
 );
 
-// export const exampleNFT = {
-//   address:
-//     targetChainId == 1 ? ExampleNFTMainnet.address : ExampleNFTGoerli.address,
-//   abi: ExampleNFTABI,
-// };
+export const MEMBERSHIPS_CONTRACT = {
+  address:
+    targetChainId == 1
+      ? DefinitelyMembershipsMainnet.address
+      : DefinitelyMembershipsGoerli.address,
+  abi: DefinitelyMembershipsABI,
+};
+
+export const CLAIMABLE_CONTRACT = {
+  address:
+    targetChainId == 1
+      ? DefinitelyClaimableMainnet.address
+      : DefinitelyClaimableGoerli.address,
+  abi: DefinitelyClaimableABI,
+};
+
+export const INVITES_CONTRACT = {
+  address:
+    targetChainId == 1
+      ? DefinitelyInvitesMainnet.address
+      : DefinitelyInvitesGoerli.address,
+  abi: DefinitelyInvitesABI,
+};

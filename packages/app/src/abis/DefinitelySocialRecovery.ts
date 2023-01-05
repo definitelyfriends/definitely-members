@@ -11,11 +11,10 @@ const abi = [
   },
   { inputs: [], name: "AlreadyDefMember", type: "error" },
   { inputs: [], name: "AlreadyVoted", type: "error" },
-  { inputs: [], name: "CannotCreateProposalForSelf", type: "error" },
+  { inputs: [], name: "NotAllowed", type: "error" },
   { inputs: [], name: "NotDefMember", type: "error" },
   { inputs: [], name: "NotProposalInitiator", type: "error" },
   { inputs: [], name: "ProposalEnded", type: "error" },
-  { inputs: [], name: "ProposalInProgress", type: "error" },
   { inputs: [], name: "ProposalNotFound", type: "error" },
   {
     anonymous: false,
@@ -63,12 +62,7 @@ const abi = [
     anonymous: false,
     inputs: [
       { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "initiator",
-        type: "address",
-      },
+      { indexed: true, internalType: "address", name: "to", type: "address" },
     ],
     name: "ProposalApproved",
     type: "event",
@@ -77,12 +71,7 @@ const abi = [
     anonymous: false,
     inputs: [
       { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "initiator",
-        type: "address",
-      },
+      { indexed: true, internalType: "address", name: "to", type: "address" },
     ],
     name: "ProposalCancelled",
     type: "event",
@@ -91,18 +80,7 @@ const abi = [
     anonymous: false,
     inputs: [
       { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "initiator",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "bool",
-        name: "addToDenyList",
-        type: "bool",
-      },
+      { indexed: true, internalType: "address", name: "to", type: "address" },
     ],
     name: "ProposalCreated",
     type: "event",
@@ -111,12 +89,7 @@ const abi = [
     anonymous: false,
     inputs: [
       { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "initiator",
-        type: "address",
-      },
+      { indexed: true, internalType: "address", name: "to", type: "address" },
     ],
     name: "ProposalDenied",
     type: "event",
@@ -136,13 +109,6 @@ const abi = [
     type: "function",
   },
   {
-    inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
-    name: "cancelProposal",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
     inputs: [],
     name: "memberships",
     outputs: [{ internalType: "address", name: "", type: "address" }],
@@ -150,10 +116,7 @@ const abi = [
     type: "function",
   },
   {
-    inputs: [
-      { internalType: "uint256", name: "id", type: "uint256" },
-      { internalType: "bool", name: "addToDenyList", type: "bool" },
-    ],
+    inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
     name: "newProposal",
     outputs: [],
     stateMutability: "nonpayable",
@@ -167,14 +130,20 @@ const abi = [
     type: "function",
   },
   {
-    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    inputs: [{ internalType: "address", name: "", type: "address" }],
     name: "proposals",
     outputs: [
-      { internalType: "address", name: "initiator", type: "address" },
+      { internalType: "uint256", name: "id", type: "uint256" },
       { internalType: "uint8", name: "approvalCount", type: "uint8" },
-      { internalType: "bool", name: "addToDenyList", type: "bool" },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
+    name: "recoverMembership",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
@@ -203,7 +172,7 @@ const abi = [
   },
   {
     inputs: [
-      { internalType: "uint256", name: "id", type: "uint256" },
+      { internalType: "address", name: "newOwner", type: "address" },
       { internalType: "bool", name: "inFavor", type: "bool" },
     ],
     name: "vote",

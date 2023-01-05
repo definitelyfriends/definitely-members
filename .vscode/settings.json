@@ -17,5 +17,6 @@
   "solidity.packageDefaultDependenciesDirectory": "packages/contracts/lib",
   "search.exclude": {
     "packages/contracts/lib": true
-  }
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

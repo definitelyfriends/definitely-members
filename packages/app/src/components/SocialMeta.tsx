@@ -7,15 +7,15 @@ interface Props {
   socialImage?: string;
 }
 
-export default function SocialMeta({
-  title = "DEF DAO",
-  description = "App description",
-  socialImage = "og-image.png",
+export function SocialMeta({
+  title = "DEF Memberships",
+  description = "Tinkering on the edge of the internet",
+  socialImage = "/og-image.png",
 }: Props) {
   const router = useRouter();
-  const baseUrl = "https://<DOMAIN_NAME>";
-  const url = `${baseUrl}/${router.asPath}`;
-  const ogImage = `${baseUrl}/${socialImage}`;
+  const baseUrl = "https://def-memberships.vercel.app";
+  const url = `${baseUrl}${router.asPath}`;
+  const ogImage = `${baseUrl}${socialImage}`;
 
   return (
     <Head>

@@ -1,10 +1,6 @@
 import { ConnectKitProvider } from "connectkit";
-import {
-  configureChains,
-  createClient,
-  defaultChains,
-  WagmiConfig,
-} from "wagmi";
+import { configureChains, createClient, WagmiConfig } from "wagmi";
+import { goerli, mainnet } from "wagmi/chains";
 import { CoinbaseWalletConnector } from "wagmi/connectors/coinbaseWallet";
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { MetaMaskConnector } from "wagmi/connectors/metaMask";
@@ -14,29 +10,24 @@ import { publicProvider } from "wagmi/providers/public";
 import { targetChainId } from "../utils/contracts";
 
 const appName = "DEF DAO";
+const alchemyId = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 
-// Filter chains to target chain ID
-const targetChains = defaultChains.filter((c) => c.id === targetChainId);
-
-// Get the alchemy API key to set up a provider
-const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-
-export const { chains, provider, webSocketProvider } = configureChains(
-  targetChains,
+const { chains, provider, webSocketProvider } = configureChains(
+  [mainnet, goerli].filter((c) => c.id === targetChainId),
   [
-    ...(alchemyApiKey ? [alchemyProvider({ apiKey: alchemyApiKey })] : []),
+    ...(alchemyId ? [alchemyProvider({ apiKey: alchemyId })] : []),
     publicProvider(),
   ]
 );
 
-export const client = createClient({
+const client = createClient({
   autoConnect: true,
   connectors: [
     new MetaMaskConnector({ chains }),
     new CoinbaseWalletConnector({
       chains,
       options: {
-        appName,
+        appName: appName,
         headlessMode: true,
       },
     }),
@@ -58,14 +49,21 @@ export const client = createClient({
   webSocketProvider,
 });
 
-interface Props {
+type Props = {
   children: React.ReactNode;
-}
+};
 
-export function EthereumProviders({ children }: Props) {
+export function Web3Provider({ children }: Props) {
   return (
     <WagmiConfig client={client}>
-      <ConnectKitProvider>{children}</ConnectKitProvider>
+      <ConnectKitProvider
+        options={{
+          hideTooltips: true,
+          walletConnectName: "Wallet Connect",
+        }}
+      >
+        {children}
+      </ConnectKitProvider>
     </WagmiConfig>
   );
 }

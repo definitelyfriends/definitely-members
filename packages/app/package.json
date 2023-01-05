@@ -17,27 +17,28 @@
   },
   "dependencies": {
     "@definitely-members/contracts": "workspace:*",
-    "@emotion/react": "^11.10.4",
-    "@emotion/styled": "^11.10.4",
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
     "@ethersproject/address": "^5.7.0",
     "@ethersproject/contracts": "^5.7.0",
     "@ethersproject/providers": "^5.7.2",
-    "@tanstack/react-query": "^4.12.0",
-    "connectkit": "^0.0.2",
+    "@tanstack/react-query": "^4.20.9",
+    "connectkit": "^1.1.1",
     "ethers": "5.7.2",
     "graphql": "^16.6.0",
-    "graphql-request": "^5.0.0",
-    "next": "12.3.1",
+    "graphql-request": "^5.1.0",
+    "lanyard": "^1.1.2",
+    "next": "13.1.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "wagmi": "0.7.5"
+    "wagmi": "0.10.4"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "^2.13.7",
-    "@graphql-codegen/client-preset": "^1.0.7",
+    "@graphql-codegen/cli": "^2.16.3",
+    "@graphql-codegen/client-preset": "^1.2.5",
     "@graphql-typed-document-node/core": "^3.1.1",
-    "@types/node": "18.11.2",
-    "@types/react": "18.0.21",
-    "typescript": "^4.8.4"
+    "@types/node": "18.11.18",
+    "@types/react": "18.0.26",
+    "typescript": "^4.9.4"
   }
 }

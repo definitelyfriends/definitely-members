@@ -1,14 +1,20 @@
 import styled from "@emotion/styled";
 import Link from "next/link";
-import { CustomConnectButton } from "./CustomConnectButton";
+import { ButtonConnect } from "./ButtonConnect";
+import { DefLogo } from "./DefLogo";
 import { Mono, Title } from "./Typography";
 
 const Wrapper = styled.div`
-  padding: 2em;
-  margin: 0 auto;
+  max-width: 48rem;
   min-height: 100%;
+  padding: 2rem 1rem;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
+
+  @media (min-width: 32rem) {
+    padding: 2rem;
+  }
 `;
 
 const Main = styled.main`
@@ -42,12 +48,16 @@ export function Layout({ children }: Props) {
     <Wrapper>
       <Main>
         <Header>
-          <Title>
-            <Link href="/">
-              <a>DEF DAO</a>
-            </Link>
-          </Title>
-          <CustomConnectButton />
+          <div>
+            <Title>
+              <Link href="/">
+                <DefLogo aria-label="DEF Memberships" />
+              </Link>
+            </Title>
+            <Mono subdued>Membership NFTs for DEF folks</Mono>
+          </div>
+
+          <ButtonConnect />
         </Header>
 
         {children}
@@ -55,9 +65,7 @@ export function Layout({ children }: Props) {
 
       <Footer>
         <Mono subdued>
-          <Link href="/contract">
-            <a>Contract</a>
-          </Link>
+          <Link href="https://defdao.xyz">defdao.xyz</Link>
         </Mono>
       </Footer>
     </Wrapper>

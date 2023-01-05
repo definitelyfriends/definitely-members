@@ -4,6 +4,7 @@ import withMargin, { WithMarginProp } from "./withMargin";
 
 interface BaseTextProps extends WithMarginProp {
   subdued?: boolean;
+  uppercase?: boolean;
   size?: "small" | "large";
 }
 
@@ -11,11 +12,17 @@ export const subdued = css`
   opacity: 0.48;
 `;
 
+export const uppercase = css`
+  text-transform: uppercase;
+`;
+
 export const titleStyles = css`
   font-family: var(--font-heading);
   font-weight: bold;
-  font-style: italic;
-  font-size: 3.2em;
+  font-size: 2em;
+  a {
+    text-decoration: none;
+  }
 `;
 
 export const Title = styled.h1<BaseTextProps>`
@@ -27,8 +34,7 @@ export const Title = styled.h1<BaseTextProps>`
 export const headingStyles = css`
   font-family: var(--font-heading);
   font-weight: bold;
-  font-style: italic;
-  font-size: 2.4em;
+  font-size: 1.6em;
 `;
 
 export const Heading = styled.h2<BaseTextProps>`
@@ -40,8 +46,7 @@ export const Heading = styled.h2<BaseTextProps>`
 export const subheadingStyles = css`
   font-family: var(--font-heading);
   font-weight: bold;
-  font-style: italic;
-  font-size: 1.6em;
+  font-size: 1.2em;
 `;
 
 export const Subheading = styled.h3<BaseTextProps>`
@@ -63,31 +68,28 @@ export const Body = styled.p<BaseTextProps>`
     switch (p.size) {
       case "small":
         return css`
-          font-size: 0.75em;
+          font-size: 0.75rem;
         `;
       case "large":
         return css`
-          font-size: 1.6em;
+          font-size: 1.6rem;
         `;
       default:
         break;
     }
   }}
-  & + & {
-    margin-top: 0.5em;
-  }
   ${withMargin};
 `;
 
 export const monoStyles = css`
   font-family: var(--font-mono);
-  font-size: 0.875em;
-  text-transform: uppercase;
+  font-size: 0.875rem;
 `;
 
 export const Mono = styled.p<BaseTextProps>`
   ${monoStyles};
   ${(p) => p.subdued && subdued};
+  ${(p) => p.uppercase && uppercase};
   ${(p) => {
     switch (p.size) {
       case "small":
