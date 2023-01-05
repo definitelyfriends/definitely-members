@@ -15,7 +15,7 @@ const placeholder = css`
 `;
 
 const transition = css`
-  transition: color 150ms ease;
+  transition: border-color 150ms ease, color 150ms ease;
 `;
 
 interface InputWrapperProps {
@@ -39,6 +39,10 @@ const InputWrapper = styled.div<InputWrapperProps>`
   line-height: 1.5;
   overflow: hidden;
 
+  &:hover {
+    border-color: rgba(var(--foreground-alpha), 0.3);
+  }
+
   &:focus-within {
     border-color: rgba(var(--foreground-alpha), 0.8);
   }
@@ -60,10 +64,11 @@ const InputElement = styled.input<{ hasSuffix: boolean }>`
   font-style: inherit;
   font-weight: inherit;
   font-size: inherit;
+  line-height: inherit;
   color: inherit;
   flex: 1;
   height: 100%;
-  padding: 1rem;
+  padding: calc(1rem + 1px);
   padding-left: 1.5rem;
 
   ${(p) =>
