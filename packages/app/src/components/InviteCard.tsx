@@ -63,9 +63,6 @@ export function InviteCard() {
 
   const { invite, inviteTx } = useSendInvite({
     to: toAddress || ("0x0" as `0x${string}`),
-    onPrepareError: (error) => {
-      console.log(error);
-    },
   });
 
   return (
