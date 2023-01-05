@@ -7,15 +7,6 @@ import {
 import { CLAIMABLE_CONTRACT } from "../utils/contracts";
 import { useMerkleProof } from "./useMerkleProof";
 
-function massageProof(data: string[] | undefined): `0x${string}`[] {
-  if (data && data.length === 0) {
-    const proof: `0x${string}`[] = [];
-    data.forEach((i) => proof.push(i as `0x${string}`));
-    return proof;
-  }
-  return [];
-}
-
 type Options = {
   onPrepareError?: (error: Error) => void;
   onTxSuccess?: () => void;
@@ -27,14 +18,10 @@ export function useClaimMembership({
   onTxSuccess,
   onTxError,
 }: Options) {
-  const withVault = true;
-
   const { address } = useAccount();
   const { data: merkleProof } = useMerkleProof({
     address,
   });
-
-  const proof = massageProof(merkleProof || undefined);
 
   const claimPrepare = usePrepareContractWrite({
     address: CLAIMABLE_CONTRACT.address as `0x${string}`,
@@ -50,8 +37,10 @@ export function useClaimMembership({
       },
     ],
     functionName: "claimMembership",
-    args: [proof],
-    enabled: Boolean(proof && address),
+    // TODO: Correctly type the proof to remove ts-ignore
+    // @ts-ignore
+    args: [merkleProof],
+    enabled: Boolean(merkleProof && address),
     onError: (error) => {
       if (onPrepareError) {
         onPrepareError(error);
