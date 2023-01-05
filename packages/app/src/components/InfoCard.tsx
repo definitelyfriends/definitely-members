@@ -7,18 +7,8 @@ import {
   INVITES_CONTRACT,
   MEMBERSHIPS_CONTRACT,
 } from "../utils/contracts";
-import { Mono, Subheading } from "./Typography";
-
-const Card = styled.article`
-  border: 1px solid rgba(var(--foreground-alpha), 0.05);
-  padding: 1rem;
-  border-radius: 0.5rem;
-
-  @media (min-width: 32rem) {
-    padding: 2rem;
-    border-radius: 1rem;
-  }
-`;
+import { Card } from "./Card";
+import { Mono } from "./Typography";
 
 const List = styled.ul`
   padding: 0 0 0 1.5em;
@@ -28,8 +18,7 @@ export function InfoCard() {
   const { getAddressUrl } = useEtherscan();
 
   return (
-    <Card>
-      <Subheading>Links</Subheading>
+    <Card title="Links">
       <List>
         <li>
           <Mono>

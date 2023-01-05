@@ -1,12 +1,12 @@
 import { TransactionReceipt } from "@ethersproject/providers";
 import {
   useAccount,
+  useContractRead,
   useContractWrite,
   usePrepareContractWrite,
   useWaitForTransaction,
 } from "wagmi";
-import { CLAIMABLE_CONTRACT } from "../utils/contracts";
-import { useMerkleProof } from "./useMerkleProof";
+import { INVITES_CONTRACT } from "../utils/contracts";
 
 type Options = {
   onPrepareError?: (error: Error) => void;
@@ -14,23 +14,24 @@ type Options = {
   onTxError?: (error: Error) => void;
 };
 
-export function useClaimMembership({
+export function useClaimInvite({
   onPrepareError,
   onTxSuccess,
   onTxError,
 }: Options) {
   const { address } = useAccount();
-  const { data: merkleProof } = useMerkleProof({
-    address,
+
+  const { data: hasInviteAvailable } = useContractRead({
+    ...INVITES_CONTRACT,
+    functionName: "inviteAvailable",
+    args: [address || "0x"],
+    enabled: Boolean(address),
   });
 
   const claimPrepare = usePrepareContractWrite({
-    ...CLAIMABLE_CONTRACT,
-    functionName: "claimMembership",
-    // TODO: Correctly type the proof to remove ts-ignore
-    // @ts-ignore
-    args: [merkleProof],
-    enabled: Boolean(merkleProof && address),
+    ...INVITES_CONTRACT,
+    functionName: "claimInvite",
+    enabled: Boolean(hasInviteAvailable && address),
     onError: (error) => {
       if (onPrepareError) {
         onPrepareError(error);
@@ -57,6 +58,7 @@ export function useClaimMembership({
   });
 
   return {
+    hasInviteAvailable,
     claimPrepare,
     claim,
     claimTx,

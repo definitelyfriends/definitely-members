@@ -1,11 +1,10 @@
 import styled from "@emotion/styled";
 import Link from "next/link";
 import { useAccount } from "wagmi";
-import { useClaimMembership } from "../hooks/useClaimMembership";
+import { useClaimInvite } from "../hooks/useClaimInvite";
 import { useEtherscan } from "../hooks/useEtherscan";
 import { useIsDefMember } from "../hooks/useIsDefMember";
 import { useIsMounted } from "../hooks/useIsMounted";
-import { useMerkleProof } from "../hooks/useMerkleProof";
 import { Button } from "./Button";
 import { ButtonConnect } from "./ButtonConnect";
 import { Card } from "./Card";
@@ -23,30 +22,23 @@ const Form = styled.form`
   }
 `;
 
-export function ClaimCard() {
+export function ClaimInviteCard() {
   const isMounted = useIsMounted();
   const { getTransactionUrl } = useEtherscan();
 
   const { address } = useAccount();
-
   const { isDefMember, refetch: refetchMemberStatus } = useIsDefMember({
     address,
   });
 
-  const { isLoading: isLoadingProof, error } = useMerkleProof({
-    address,
-  });
-
-  const { claim, claimTx } = useClaimMembership({
+  const { hasInviteAvailable, claim, claimTx } = useClaimInvite({
     onTxSuccess: () => refetchMemberStatus(),
   });
 
-  const errorMessage = error instanceof Error ? error.message : "";
-
   return (
-    <Card title="Claim Membership">
-      <Mono margin="0 0 1">
-        Claim your NFT for DEF DAO if you submitted your address in Discord.
+    <Card title="Claim Invite">
+      <Mono margin="0.25 0 1">
+        Claim your DEF Membership if another member has invited you.
       </Mono>
 
       {isMounted && address ? (
@@ -60,7 +52,7 @@ export function ClaimCard() {
             <Button
               disabled={Boolean(!claim.write || claimTx.error)}
               type="submit"
-              isLoading={isLoadingProof || claim.isLoading || claimTx.isLoading}
+              isLoading={claim.isLoading || claimTx.isLoading}
             >
               {claimTx.isLoading ? (
                 <Mono as="span">Claiming&hellip;</Mono>
@@ -71,8 +63,8 @@ export function ClaimCard() {
               )}
             </Button>
 
-            {!isDefMember && error && errorMessage && (
-              <Mono subdued>{errorMessage}</Mono>
+            {hasInviteAvailable === false && !isDefMember && (
+              <Mono subdued>No invite available</Mono>
             )}
           </>
         </Form>

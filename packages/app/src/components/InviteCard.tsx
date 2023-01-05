@@ -1,39 +1,112 @@
 import styled from "@emotion/styled";
-import Link from "next/link";
-import { useEtherscan } from "../hooks/useEtherscan";
-import { INVITES_CONTRACT } from "../utils/contracts";
-import { Mono, Subheading } from "./Typography";
+import { ChangeEvent, useEffect, useState } from "react";
+import { useEnsAddress } from "wagmi";
+import { useIsDefMember } from "../hooks/useIsDefMember";
+import { useIsMounted } from "../hooks/useIsMounted";
+import { useSendInvite } from "../hooks/useSendInvite";
+import { Button } from "./Button";
+import { Card } from "./Card";
+import { Input } from "./Input";
+import { LoadingIndicator } from "./LoadingIndicator";
+import { Mono } from "./Typography";
 
-const Card = styled.article`
-  border: 1px solid rgba(var(--foreground-alpha), 0.05);
-  padding: 1rem;
-  border-radius: 0.5rem;
+const Form = styled.form`
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-gap: 1em;
 
-  @media (min-width: 32rem) {
-    padding: 2rem;
-    border-radius: 1rem;
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr max-content;
+    align-items: start;
   }
 `;
 
 export function InviteCard() {
-  const { getAddressUrl } = useEtherscan();
+  const isMounted = useIsMounted();
+
+  const [toInput, setToInput] = useState("");
+  const [toInputLoading, setToInputLoading] = useState(false);
+  const [debouncedToInput, setDebouncedToInput] = useState("");
+  const [toInputError, setToInputError] = useState("");
+
+  const { isDefMember: isToDefMember } = useIsDefMember({
+    address: debouncedToInput as `0x${string}`,
+    onSettled: (isMember, error) => {
+      if (error) {
+        setToInputError("Invalid address");
+      }
+      if (isMember) {
+        setToInputError("Already a DEF member");
+      }
+      setToInputLoading(false);
+    },
+  });
+
+  useEffect(() => {
+    setToInputError("");
+    if (toInput === "") {
+      setToInputLoading(false);
+    }
+    const tick = setTimeout(() => {
+      setDebouncedToInput(toInput.trim());
+    }, 300);
+
+    return () => clearTimeout(tick);
+  }, [toInput]);
+
+  const onInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setToInput(event.target.value);
+    setToInputLoading(true);
+  };
+
+  const { data: toAddress } = useEnsAddress({ name: debouncedToInput });
+
+  const { invite, inviteTx } = useSendInvite({
+    to: toAddress || ("0x0" as `0x${string}`),
+    onPrepareError: (error) => {
+      console.log(error);
+    },
+  });
 
   return (
-    <Card>
-      <Subheading>Invite Member</Subheading>
-      <Mono margin="0.25 0 1" uppercase subdued>
-        UI coming soon
+    <Card title="Send Invite">
+      <Mono margin="0 0 1">
+        Invite a new member to DEF and they can claim whenever they're ready.
       </Mono>
 
-      <Mono margin="0.25 0 0">
-        For now, you can use the{" "}
-        <Link href={getAddressUrl(INVITES_CONTRACT.address) || ""}>
-          invites contract
-        </Link>{" "}
-        directly on Etherscan if you already have a DEF NFT. Go to the "write
-        contract" tab and use the "sendImmediateInvite" function with the
-        address of the person you want to invite to DEF.
-      </Mono>
+      {isMounted && (
+        <Form
+          onSubmit={(e) => {
+            e.preventDefault();
+            invite.write?.();
+          }}
+        >
+          <>
+            <div>
+              <Input
+                value={toInput}
+                onChange={onInputChange}
+                suffixEl={toInputLoading ? <LoadingIndicator /> : null}
+                errorMessage={toInputError}
+              />
+            </div>
+
+            <Button
+              disabled={Boolean(
+                !invite.write || inviteTx.error || isToDefMember
+              )}
+              type="submit"
+              isLoading={invite.isLoading || inviteTx.isLoading}
+            >
+              {inviteTx.isLoading ? (
+                <Mono as="span">Claiming&hellip;</Mono>
+              ) : (
+                "Send invite"
+              )}
+            </Button>
+          </>
+        </Form>
+      )}
     </Card>
   );
 }

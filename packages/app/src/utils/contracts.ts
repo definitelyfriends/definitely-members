@@ -15,25 +15,22 @@ export const targetChainId = parseInt(
 );
 
 export const MEMBERSHIPS_CONTRACT = {
-  address:
-    targetChainId == 1
-      ? DefinitelyMembershipsMainnet.address
-      : DefinitelyMembershipsGoerli.address,
+  address: (targetChainId == 1
+    ? DefinitelyMembershipsMainnet.address
+    : DefinitelyMembershipsGoerli.address) as `0x${string}`,
   abi: DefinitelyMembershipsABI,
 };
 
 export const CLAIMABLE_CONTRACT = {
-  address:
-    targetChainId == 1
-      ? DefinitelyClaimableMainnet.address
-      : DefinitelyClaimableGoerli.address,
+  address: (targetChainId == 1
+    ? DefinitelyClaimableMainnet.address
+    : DefinitelyClaimableGoerli.address) as `0x${string}`,
   abi: DefinitelyClaimableABI,
 };
 
 export const INVITES_CONTRACT = {
-  address:
-    targetChainId == 1
-      ? DefinitelyInvitesMainnet.address
-      : DefinitelyInvitesGoerli.address,
+  address: (targetChainId == 1
+    ? DefinitelyInvitesMainnet.address
+    : DefinitelyInvitesGoerli.address) as `0x${string}`,
   abi: DefinitelyInvitesABI,
 };

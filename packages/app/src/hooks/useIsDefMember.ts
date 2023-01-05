@@ -3,23 +3,26 @@ import { MEMBERSHIPS_CONTRACT } from "../utils/contracts";
 
 type Options = {
   address: `0x${string}` | undefined;
+  onSettled?: (isMember: boolean | undefined, error: Error | null) => void;
+  onSuccess?: (isMember: boolean) => void;
 };
 
-export function useIsDefMember({ address }: Options) {
+export function useIsDefMember({ address, onSuccess, onSettled }: Options) {
   const { data, ...query } = useContractRead({
-    address: MEMBERSHIPS_CONTRACT.address as `0x${string}`,
-    abi: [
-      {
-        inputs: [{ internalType: "address", name: "owner", type: "address" }],
-        name: "balanceOf",
-        outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-        stateMutability: "view",
-        type: "function",
-      },
-    ],
+    ...MEMBERSHIPS_CONTRACT,
     functionName: "balanceOf",
     args: [address || "0x"],
     enabled: Boolean(address),
+    onSuccess: (data) => {
+      if (onSuccess) {
+        onSuccess(Boolean(data.gt(0)));
+      }
+    },
+    onSettled: (data, error) => {
+      if (onSettled) {
+        onSettled(data && data.gt(0), error);
+      }
+    },
   });
 
   return {
