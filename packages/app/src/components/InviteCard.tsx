@@ -88,6 +88,7 @@ export function InviteCard() {
                 onChange={onInputChange}
                 suffixEl={toInputLoading ? <LoadingIndicator /> : null}
                 errorMessage={toInputError}
+                placeholder="ENS or address"
               />
             </div>
 
