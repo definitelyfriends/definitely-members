@@ -9,16 +9,7 @@ type MerkleProofOptions = {
 
 export function useMerkleProof({ address }: MerkleProofOptions) {
   const { data } = useContractRead({
-    address: CLAIMABLE_CONTRACT.address as `0x${string}`,
-    abi: [
-      {
-        inputs: [],
-        name: "claimableRoot",
-        outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
-        stateMutability: "view",
-        type: "function",
-      },
-    ],
+    ...CLAIMABLE_CONTRACT,
     functionName: "claimableRoot",
   });
 

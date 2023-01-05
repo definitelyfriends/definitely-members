@@ -1,12 +1,7 @@
-import styled from "@emotion/styled";
 import { useEtherscan } from "../hooks/useEtherscan";
 import { ButtonConnect } from "./ButtonConnect";
 import { Card } from "./Card";
 import { Mono } from "./Typography";
-
-const List = styled.ul`
-  padding: 0 0 0 1.5em;
-`;
 
 export function ConnectWalletCard() {
   const { getAddressUrl } = useEtherscan();

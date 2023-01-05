@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import Link from "next/link";
+import { useContractRead } from "wagmi";
 import { useEtherscan } from "../hooks/useEtherscan";
-import { CLAIMABLE_ROOT } from "../utils/constants";
 import {
   CLAIMABLE_CONTRACT,
   INVITES_CONTRACT,
@@ -16,6 +16,10 @@ const List = styled.ul`
 
 export function InfoCard() {
   const { getAddressUrl } = useEtherscan();
+  const { data } = useContractRead({
+    ...CLAIMABLE_CONTRACT,
+    functionName: "claimableRoot",
+  });
 
   return (
     <Card title="Links">
@@ -43,9 +47,7 @@ export function InfoCard() {
         </li>
         <li>
           <Mono>
-            <Link
-              href={`https://lanyard.org/api/v1/tree?root=${CLAIMABLE_ROOT}`}
-            >
+            <Link href={`https://lanyard.org/api/v1/tree?root=${data || ""}`}>
               Claiming merkle root
             </Link>
           </Mono>
