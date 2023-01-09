@@ -7,6 +7,7 @@ import { DefLogoCard } from "../components/DefLogoCard";
 import { InfoCard } from "../components/InfoCard";
 import { InviteCard } from "../components/InviteCard";
 import { Layout } from "../components/Layout";
+import { MembersCard } from "../components/MembersCard";
 import { useIsDefMember } from "../hooks/useIsDefMember";
 import { useIsMounted } from "../hooks/useIsMounted";
 
@@ -36,6 +37,7 @@ export default function HomePage() {
         )}
         {isMounted && address && !isLoading && isDefMember && <InviteCard />}
         <InfoCard />
+        <MembersCard />
       </Page>
     </Layout>
   );

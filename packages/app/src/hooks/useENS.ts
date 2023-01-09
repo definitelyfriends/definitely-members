@@ -9,8 +9,22 @@ function addressDisplayName(address?: string) {
   return `${match[1]}…${match[2]}`;
 }
 
+type ENSResponse = {
+  address: string | undefined;
+  name: string | null;
+  displayName: string;
+  avatar: string | null;
+};
+
 export function useENS(address?: string) {
   const addressLowercase = address && address.toLowerCase();
+
+  const placeholder: ENSResponse = {
+    address: addressLowercase,
+    name: null,
+    displayName: addressDisplayName(addressLowercase),
+    avatar: null,
+  };
 
   const { data, ...ensQuery } = useQuery(
     ["ensResolver", addressLowercase],
@@ -21,24 +35,25 @@ export function useENS(address?: string) {
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-      return response.json();
+
+      const ensResponse: Promise<ENSResponse> = response.json();
+      return ensResponse;
     },
     {
       enabled: Boolean(address),
-      placeholderData: {
-        address: addressLowercase,
-        name: null,
-        displayName: addressDisplayName(addressLowercase),
-        avatar: null,
-      },
+      placeholderData: placeholder,
     }
   );
 
+  if (!data) {
+    return {
+      ...placeholder,
+      ...ensQuery,
+    };
+  }
+
   return {
-    address: data.address,
-    name: data.name,
-    displayName: data.displayName,
-    avatar: data.avatar,
-    ensQuery,
+    ...data,
+    ...ensQuery,
   };
 }

@@ -40,6 +40,7 @@ type Wallet @entity {
   isMember: Boolean!
   joinedTimestamp: BigInt!
   joinedBlockNumber: BigInt!
+  joinedTxHash: Bytes!
   invitedBy: Wallet
   invited: [Wallet!]
 }

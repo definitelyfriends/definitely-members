@@ -1,12 +1,13 @@
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
+import withMargin, { WithMarginProp } from "./withMargin";
 
 const rotate = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 `;
 
-export const LoadingIndicator = styled.span`
+export const LoadingIndicator = styled.span<WithMarginProp>`
   width: 16px;
   height: 16px;
   display: inline-block;
@@ -27,4 +28,6 @@ export const LoadingIndicator = styled.span`
     border-right: 2px solid transparent;
     animation: ${rotate} 650ms ease-in-out infinite;
   }
+
+  ${withMargin};
 `;

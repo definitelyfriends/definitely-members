@@ -6,6 +6,7 @@ interface BaseTextProps extends WithMarginProp {
   subdued?: boolean;
   uppercase?: boolean;
   size?: "small" | "large";
+  textAlign?: "left" | "center" | "right";
 }
 
 export const subdued = css`
@@ -14,6 +15,13 @@ export const subdued = css`
 
 export const uppercase = css`
   text-transform: uppercase;
+`;
+
+export const textAlign = (align: BaseTextProps["textAlign"]) => css`
+  ${align &&
+  css`
+    text-align: ${align};
+  `};
 `;
 
 export const titleStyles = css`
@@ -28,6 +36,7 @@ export const titleStyles = css`
 export const Title = styled.h1<BaseTextProps>`
   ${titleStyles};
   ${(p) => p.subdued && subdued};
+  ${(p) => textAlign(p.textAlign)};
   ${withMargin};
 `;
 
@@ -40,6 +49,7 @@ export const headingStyles = css`
 export const Heading = styled.h2<BaseTextProps>`
   ${headingStyles};
   ${(p) => p.subdued && subdued};
+  ${(p) => textAlign(p.textAlign)};
   ${withMargin};
 `;
 
@@ -52,6 +62,7 @@ export const subheadingStyles = css`
 export const Subheading = styled.h3<BaseTextProps>`
   ${subheadingStyles};
   ${(p) => p.subdued && subdued};
+  ${(p) => textAlign(p.textAlign)};
   ${withMargin};
 `;
 
@@ -64,6 +75,7 @@ export const bodyStyles = css`
 export const Body = styled.p<BaseTextProps>`
   ${bodyStyles};
   ${(p) => p.subdued && subdued};
+  ${(p) => textAlign(p.textAlign)};
   ${(p) => {
     switch (p.size) {
       case "small":
@@ -90,6 +102,7 @@ export const Mono = styled.p<BaseTextProps>`
   ${monoStyles};
   ${(p) => p.subdued && subdued};
   ${(p) => p.uppercase && uppercase};
+  ${(p) => textAlign(p.textAlign)};
   ${(p) => {
     switch (p.size) {
       case "small":

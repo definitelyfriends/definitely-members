@@ -602,6 +602,7 @@ export type Wallet = {
   isMember: Scalars['Boolean'];
   joinedBlockNumber: Scalars['BigInt'];
   joinedTimestamp: Scalars['BigInt'];
+  joinedTxHash: Scalars['Bytes'];
   tokens: Array<Token>;
 };
 
@@ -688,6 +689,12 @@ export type Wallet_Filter = {
   joinedTimestamp_lte?: InputMaybe<Scalars['BigInt']>;
   joinedTimestamp_not?: InputMaybe<Scalars['BigInt']>;
   joinedTimestamp_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
+  joinedTxHash?: InputMaybe<Scalars['Bytes']>;
+  joinedTxHash_contains?: InputMaybe<Scalars['Bytes']>;
+  joinedTxHash_in?: InputMaybe<Array<Scalars['Bytes']>>;
+  joinedTxHash_not?: InputMaybe<Scalars['Bytes']>;
+  joinedTxHash_not_contains?: InputMaybe<Scalars['Bytes']>;
+  joinedTxHash_not_in?: InputMaybe<Array<Scalars['Bytes']>>;
   tokens_?: InputMaybe<Token_Filter>;
 };
 
@@ -699,6 +706,7 @@ export enum Wallet_OrderBy {
   IsMember = 'isMember',
   JoinedBlockNumber = 'joinedBlockNumber',
   JoinedTimestamp = 'joinedTimestamp',
+  JoinedTxHash = 'joinedTxHash',
   Tokens = 'tokens'
 }
 
@@ -739,7 +747,7 @@ export enum _SubgraphErrorPolicy_ {
 export type MembersQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MembersQueryQuery = { __typename?: 'Query', wallets: Array<{ __typename?: 'Wallet', address: any, isMember: boolean, joinedBlockNumber: any, joinedTimestamp: any, tokens: Array<{ __typename?: 'Token', id: string }>, invited?: Array<{ __typename?: 'Wallet', address: any }> | null, invitedBy?: { __typename?: 'Wallet', address: any } | null }> };
+export type MembersQueryQuery = { __typename?: 'Query', wallets: Array<{ __typename?: 'Wallet', address: any, isMember: boolean, joinedBlockNumber: any, joinedTimestamp: any, joinedTxHash: any, tokens: Array<{ __typename?: 'Token', id: string }>, invited?: Array<{ __typename?: 'Wallet', address: any }> | null, invitedBy?: { __typename?: 'Wallet', address: any } | null }> };
 
 
-export const MembersQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MembersQuery"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"wallets"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"joinedTimestamp"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"asc"}},{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isMember"},"value":{"kind":"BooleanValue","value":true}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"}},{"kind":"Field","name":{"kind":"Name","value":"isMember"}},{"kind":"Field","name":{"kind":"Name","value":"joinedBlockNumber"}},{"kind":"Field","name":{"kind":"Name","value":"joinedTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"tokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"invited"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"}}]}},{"kind":"Field","name":{"kind":"Name","value":"invitedBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"}}]}}]}}]}}]} as unknown as DocumentNode<MembersQueryQuery, MembersQueryQueryVariables>;
+export const MembersQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MembersQuery"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"wallets"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"joinedTimestamp"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"asc"}},{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"isMember"},"value":{"kind":"BooleanValue","value":true}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"}},{"kind":"Field","name":{"kind":"Name","value":"isMember"}},{"kind":"Field","name":{"kind":"Name","value":"joinedBlockNumber"}},{"kind":"Field","name":{"kind":"Name","value":"joinedTimestamp"}},{"kind":"Field","name":{"kind":"Name","value":"joinedTxHash"}},{"kind":"Field","name":{"kind":"Name","value":"tokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"invited"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"}}]}},{"kind":"Field","name":{"kind":"Name","value":"invitedBy"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"}}]}}]}}]}}]} as unknown as DocumentNode<MembersQueryQuery, MembersQueryQueryVariables>;

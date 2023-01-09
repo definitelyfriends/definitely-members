@@ -1,4 +1,4 @@
-import { BigInt, log } from "@graphprotocol/graph-ts";
+import { BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 import {
   InviteClaimed,
   MemberInvited,
@@ -37,6 +37,7 @@ export function handleTransfer(event: TransferEvent): void {
     fromWallet.isMember = false;
     fromWallet.joinedTimestamp = BigInt.fromI32(0);
     fromWallet.joinedBlockNumber = BigInt.fromI32(0);
+    fromWallet.joinedTxHash = Bytes.fromHexString("");
     fromWallet.save();
   }
 
@@ -48,6 +49,7 @@ export function handleTransfer(event: TransferEvent): void {
   toWallet.isMember = true;
   toWallet.joinedTimestamp = event.block.timestamp;
   toWallet.joinedBlockNumber = event.block.number;
+  toWallet.joinedTxHash = event.transaction.hash;
   toWallet.save();
 
   let metadata = MetadataContract.load(defaultMetadataAddress.toHexString());
@@ -95,6 +97,7 @@ export function handleMemberInvited(event: MemberInvited): void {
     invitedWallet.isMember = false;
     invitedWallet.joinedTimestamp = BigInt.fromI32(0);
     invitedWallet.joinedBlockNumber = BigInt.fromI32(0);
+    invitedWallet.joinedTxHash = Bytes.fromHexString("");
     invitedWallet.save();
   }
 
@@ -124,5 +127,6 @@ export function handleInviteClaimed(event: InviteClaimed): void {
   invitedWallet.isMember = true;
   invitedWallet.joinedTimestamp = event.block.timestamp;
   invitedWallet.joinedBlockNumber = event.block.number;
+  invitedWallet.joinedTxHash = event.transaction.hash;
   invitedWallet.save();
 }

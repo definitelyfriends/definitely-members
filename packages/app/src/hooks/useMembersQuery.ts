@@ -14,6 +14,7 @@ export const membersQueryDocument = graphql(/* GraphQL */ `
       isMember
       joinedBlockNumber
       joinedTimestamp
+      joinedTxHash
       tokens(first: 1) {
         id
       }
@@ -37,6 +38,7 @@ export function useMembersQuery() {
         address: wallet.address as string,
         joinedBlockNumber: BigNumber.from(wallet.joinedBlockNumber).toNumber(),
         joinedTimestamp: BigNumber.from(wallet.joinedTimestamp).toNumber(),
+        joinedTxHash: wallet.joinedTxHash as string,
         tokenId: wallet.tokens.length > 0 ? wallet.tokens[0].id : null,
         invited:
           wallet.invited && wallet.invited.length > 0
