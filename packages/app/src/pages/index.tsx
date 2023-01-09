@@ -1,7 +1,6 @@
 import styled from "@emotion/styled";
 import { useAccount } from "wagmi";
 import { Card } from "../components/Card";
-import { ClaimCard } from "../components/ClaimCard";
 import { ClaimInviteCard } from "../components/ClaimInviteCard";
 import { ConnectWalletCard } from "../components/ConnectWalletCard";
 import { DefLogoCard } from "../components/DefLogoCard";
@@ -33,10 +32,7 @@ export default function HomePage() {
           <Card title="Checking membership status" isLoading />
         )}
         {isMounted && address && !isLoading && !isDefMember && (
-          <>
-            <ClaimCard />
-            <ClaimInviteCard />
-          </>
+          <ClaimInviteCard />
         )}
         {isMounted && address && !isLoading && isDefMember && <InviteCard />}
         <InfoCard />

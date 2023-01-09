@@ -40,20 +40,6 @@ export function InfoCard() {
         </li>
         <li>
           <Mono>
-            <Link href={getAddressUrl(CLAIMABLE_CONTRACT.address) || ""}>
-              Claiming Contract
-            </Link>
-          </Mono>
-        </li>
-        <li>
-          <Mono>
-            <Link href={`https://lanyard.org/api/v1/tree?root=${data || ""}`}>
-              Claiming merkle root
-            </Link>
-          </Mono>
-        </li>
-        <li>
-          <Mono>
             <Link href={getAddressUrl(INVITES_CONTRACT.address) || ""}>
               Invites Contract
             </Link>
