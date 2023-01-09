@@ -1,0 +1,57 @@
+specVersion: 0.0.4
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: DefinitelyMemberships
+    network: mainnet
+    source:
+      abi: DefinitelyMemberships
+      address: "0x3193046D450Dade9ca17F88db4A72230140E64dC"
+      startBlock: 16336206
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Token
+        - Wallet
+        - Transfer
+      abis:
+        - name: DefinitelyMemberships
+          file: ../contracts/out/DefinitelyMemberships.sol/DefinitelyMemberships.abi.json
+      eventHandlers:
+        - event: DefinitelyShipping()
+          handler: handleInit
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+        - event: DefaultMetadataUpdated(indexed address)
+          handler: handleDefaultMetadataUpdated
+        - event: MetadataOverridden(indexed uint256,indexed address)
+          handler: handleMetadataOverridden
+        - event: MetadataResetToDefault(indexed uint256)
+          handler: handleMetadataResetToDefault
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: DefinitelyInvites
+    network: mainnet
+    source:
+      abi: DefinitelyInvites
+      address: "0xf34cce6ac795eC296D1e738D2152f2e038870653"
+      startBlock: 16336206
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Token
+        - Wallet
+      abis:
+        - name: DefinitelyInvites
+          file: ../contracts/out/DefinitelyInvites.sol/DefinitelyInvites.abi.json
+      eventHandlers:
+        - event: MemberInvited(indexed address,indexed address)
+          handler: handleMemberInvited
+        - event: InviteClaimed(indexed address)
+          handler: handleInviteClaimed
+      file: ./src/mapping.ts

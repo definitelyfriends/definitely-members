@@ -2,10 +2,10 @@ import type { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
   overwrite: true,
-  schema: "https://api.thegraph.com/subgraphs/name/samkingco/example-nft",
+  schema: "https://api.thegraph.com/subgraphs/name/samkingco/def-memberships",
   documents: "src/**/!(*.d).{ts,tsx}",
   generates: {
-    "src/graphql": {
+    "src/graphql/": {
       preset: "client",
       plugins: [],
     },

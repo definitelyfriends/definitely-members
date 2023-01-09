@@ -1,15 +1,45 @@
-type Settings @entity {
+type Registry @entity {
   id: ID!
+  address: Bytes!
+}
+
+type IssuingContract @entity {
+  id: ID!
+  address: Bytes!
+  approved: Boolean!
+}
+
+type RevokingContract @entity {
+  id: ID!
+  address: Bytes!
+  approved: Boolean!
+}
+
+type TransferContract @entity {
+  id: ID!
+  address: Bytes!
+  approved: Boolean!
+}
+
+type MetadataContract @entity {
+  id: ID!
+  address: Bytes!
 }
 
 type Token @entity {
   id: ID!
   owner: Wallet
   tokenURI: String!
+  metadata: MetadataContract!
 }
 
 type Wallet @entity {
   id: ID!
   address: Bytes!
   tokens: [Token!]! @derivedFrom(field: "owner")
+  isMember: Boolean!
+  joinedTimestamp: BigInt!
+  joinedBlockNumber: BigInt!
+  invitedBy: Wallet
+  invited: [Wallet!]
 }
