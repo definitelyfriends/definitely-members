@@ -1,12 +1,7 @@
 import styled from "@emotion/styled";
 import Link from "next/link";
-import { useContractRead } from "wagmi";
 import { useEtherscan } from "../hooks/useEtherscan";
-import {
-  CLAIMABLE_CONTRACT,
-  INVITES_CONTRACT,
-  MEMBERSHIPS_CONTRACT,
-} from "../utils/contracts";
+import { INVITES_CONTRACT, MEMBERSHIPS_CONTRACT } from "../utils/contracts";
 import { Card } from "./Card";
 import { Mono } from "./Typography";
 
@@ -16,10 +11,6 @@ const List = styled.ul`
 
 export function InfoCard() {
   const { getAddressUrl } = useEtherscan();
-  const { data } = useContractRead({
-    ...CLAIMABLE_CONTRACT,
-    functionName: "claimableRoot",
-  });
 
   return (
     <Card title="Links">
