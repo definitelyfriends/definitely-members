@@ -4,6 +4,7 @@ export const ButtonClear = styled.button`
   font-weight: inherit;
   font-family: inherit;
   line-height: inherit;
+  text-transform: inherit;
   text-decoration: underline;
   text-decoration-color: rgba(var(--foreground-alpha), 0.4);
   text-align: inherit;
