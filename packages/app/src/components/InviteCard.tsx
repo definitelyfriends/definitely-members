@@ -1,6 +1,8 @@
 import styled from "@emotion/styled";
+import Link from "next/link";
 import { ChangeEvent, useEffect, useState } from "react";
 import { useEnsAddress } from "wagmi";
+import { useEtherscan } from "../hooks/useEtherscan";
 import { useIsDefMember } from "../hooks/useIsDefMember";
 import { useIsMounted } from "../hooks/useIsMounted";
 import { useSendInvite } from "../hooks/useSendInvite";
@@ -23,6 +25,7 @@ const Form = styled.form`
 
 export function InviteCard() {
   const isMounted = useIsMounted();
+  const { getTransactionUrl } = useEtherscan();
 
   const [toInput, setToInput] = useState("");
   const [toInputLoading, setToInputLoading] = useState(false);
@@ -63,6 +66,9 @@ export function InviteCard() {
 
   const { invite, inviteTx } = useSendInvite({
     to: toAddress || ("0x0" as `0x${string}`),
+    onTxSuccess: () => {
+      setToInput("");
+    },
   });
 
   return (
@@ -104,6 +110,14 @@ export function InviteCard() {
             </Button>
           </>
         </Form>
+      )}
+
+      {invite.data && (
+        <Mono margin="0.5 0 0" subdued>
+          <Link href={getTransactionUrl(invite.data.hash) || ""}>
+            View transaction on explorer
+          </Link>
+        </Mono>
       )}
     </Card>
   );
