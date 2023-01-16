@@ -13,6 +13,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel-plugin for production.
  */
 const documents = {
+    "\n  query MemberQuery($address: ID!) {\n    wallet(id: $address) {\n      address\n      isMember\n      joinedBlockNumber\n      joinedTimestamp\n      joinedTxHash\n      tokens(first: 1) {\n        id\n      }\n      invited {\n        address\n      }\n      invitedBy {\n        address\n      }\n    }\n  }\n": types.MemberQueryDocument,
     "\n  query MembersQuery {\n    wallets(\n      orderBy: joinedTimestamp\n      orderDirection: asc\n      where: { isMember: true }\n    ) {\n      address\n      isMember\n      joinedBlockNumber\n      joinedTimestamp\n      joinedTxHash\n      tokens(first: 1) {\n        id\n      }\n      invited {\n        address\n      }\n      invitedBy {\n        address\n      }\n    }\n  }\n": types.MembersQueryDocument,
 };
 
@@ -30,6 +31,10 @@ const documents = {
 **/
 export function graphql(source: string): unknown;
 
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query MemberQuery($address: ID!) {\n    wallet(id: $address) {\n      address\n      isMember\n      joinedBlockNumber\n      joinedTimestamp\n      joinedTxHash\n      tokens(first: 1) {\n        id\n      }\n      invited {\n        address\n      }\n      invitedBy {\n        address\n      }\n    }\n  }\n"): (typeof documents)["\n  query MemberQuery($address: ID!) {\n    wallet(id: $address) {\n      address\n      isMember\n      joinedBlockNumber\n      joinedTimestamp\n      joinedTxHash\n      tokens(first: 1) {\n        id\n      }\n      invited {\n        address\n      }\n      invitedBy {\n        address\n      }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

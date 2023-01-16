@@ -7,6 +7,7 @@ import DefinitelyMembershipsGoerli from "@definitely-members/contracts/deploys/D
 import DefinitelyClaimableABI from "../abis/DefinitelyClaimable";
 import DefinitelyInvitesABI from "../abis/DefinitelyInvites";
 import DefinitelyMembershipsABI from "../abis/DefinitelyMemberships";
+import DefinitelyGovernance from "~abis/DefinitelyGovernance";
 
 // Will default to goerli if nothing set in the ENV
 export const targetChainId = parseInt(
@@ -33,4 +34,13 @@ export const INVITES_CONTRACT = {
     ? DefinitelyInvitesMainnet.address
     : DefinitelyInvitesGoerli.address) as `0x${string}`,
   abi: DefinitelyInvitesABI,
+};
+
+export const GOVERNANCE_CONTRACT = {
+  address: DefinitelyGovernance.address as `0x${string}`,
+  abi: DefinitelyGovernance.abi,
+};
+
+export const CANTO_FORWARDER_CONTRACT = {
+  address: "0x3E4404d874fa73659cCfFc21Ac4839EcA21F0b4c",
 };
