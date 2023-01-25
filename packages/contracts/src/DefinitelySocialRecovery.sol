@@ -95,7 +95,7 @@ contract DefinitelySocialRecovery is Auth {
 
     /// @dev Reverts if `msg.sender` is not a member
     modifier onlyDefMember() {
-        if (!(IERC721(memberships).balanceOf(msg.sender) < 1)) revert NotDefMember();
+        if ((IERC721(memberships).balanceOf(msg.sender) < 1)) revert NotDefMember();
         _;
     }
 
